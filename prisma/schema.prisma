@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid()) @map("id")
+  email        String    @unique @map("email")
+  password     String    @map("password")
+  username     String    @unique @map("username") @db.VarChar(32)
+  name         String    @map("name") @db.VarChar(48)
+  bio          String?   @map("bio") @db.VarChar(512)
+  profileImg   String?   @map("profile_img")
+  role         Role      @default(USER) @map("role")
+  lastLogin    DateTime? @map("last_login") @db.Timestamptz()
+  bannedUntil  DateTime? @map("banned_until") @db.Timestamptz
+  posts        Post[]
+  following    User[]    @relation("UserFollows")
+  followedBy   User[]    @relation("UserFollows")
+  postLikes    Post[]    @relation("UserLikedPost")
+  commentLikes Comment[] @relation("UserLikedComment")
+  Comment      Comment[]
+
+  @@map("users")
+}
+
+model Post {
+  id        Int       @id @default(autoincrement()) @map("id")
+  caption   String    @map("caption") @db.VarChar(2048)
+  imageUrl  String?   @map("image_url")
+  imageId   String?   @map("image_id")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String    @map("author_id")
+  userLikes User[]    @relation("UserLikedPost")
+  comments  Comment[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement()) @map("id")
+  authorId  String   @map("author_id")
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  message   String   @map("message") @db.VarChar(2048)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  userLikes User[]   @relation("UserLikedComment")
+  postId    Int      @map("post_id")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
