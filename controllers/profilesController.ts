@@ -123,3 +123,49 @@ export const profile_GET = [
     });
   }),
 ];
+
+// POST /profiles/:username/follow
+export const profileFollow_POST = [
+  passport.authenticate("jwt", { session: false }),
+  param("username").isLength({ max: 32 }).withMessage("not a valid username"),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+
+    const user = await db.user.findUnique({
+      where: {
+        username: data.username,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!user) {
+      const error = new AppError(404, "NOT_FOUND", "User not found");
+      res.status(error.status).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+        },
+      });
+    }
+    const result = await db.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        followedBy: {
+          connect: {
+            id: req.user?.id,
+          },
+        },
+      },
+    });
+    // send response
+    res.json({
+      success: true,
+      message: `successfully following ${result.name}`,
+    });
+  }),
+];
