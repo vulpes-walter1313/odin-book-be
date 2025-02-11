@@ -6,6 +6,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import db from "@/db/db";
 import { Prisma } from "@prisma/client";
 
+// GET /profiles
 export const profiles_GET = [
   passport.authenticate("jwt", { session: false }),
   query("page")
@@ -46,13 +47,30 @@ export const profiles_GET = [
             followedBy: true,
           },
         },
+        followedBy: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
     // TODO: check if logged in user follows them or not
+    const finalUsers = allUsers.map((user) => {
+      return {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        bio: user.bio,
+        _count: {
+          followedBy: user._count.followedBy,
+        },
+        areFollowing: user.followedBy.some((user) => user.id === req.user?.id),
+      };
+    });
 
     res.json({
       success: true,
-      users: allUsers,
+      users: finalUsers,
       currentPage: page,
       totalPages: totalPages,
     });
