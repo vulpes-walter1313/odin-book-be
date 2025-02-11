@@ -149,6 +149,7 @@ export const profileFollow_POST = [
           message: error.message,
         },
       });
+      return;
     }
     const result = await db.user.update({
       where: {
@@ -161,11 +162,65 @@ export const profileFollow_POST = [
           },
         },
       },
+      select: {
+        id: true,
+        name: true,
+      },
     });
     // send response
     res.json({
       success: true,
       message: `successfully following ${result.name}`,
+    });
+  }),
+];
+
+// DELETE /profiles/:username/follow
+export const profileUnfollow_DELETE = [
+  passport.authenticate("jwt", { session: false }),
+  param("username").isLength({ max: 32 }).withMessage("not a valid username"),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+
+    const user = await db.user.findUnique({
+      where: {
+        username: data.username,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!user) {
+      const error = new AppError(404, "NOT_FOUND", "User not found");
+      res.status(error.status).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+        },
+      });
+      return;
+    }
+    const result = await db.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        followedBy: {
+          disconnect: {
+            id: req.user?.id,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+    res.json({
+      success: true,
+      message: `Successfully unfollowed ${result.name}`,
     });
   }),
 ];
