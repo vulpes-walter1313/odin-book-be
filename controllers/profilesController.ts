@@ -102,6 +102,11 @@ export const profile_GET = [
             following: true,
           },
         },
+        followedBy: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
@@ -116,10 +121,24 @@ export const profile_GET = [
       });
       return;
     }
+    const finalProfile = {
+      id: userProfile.id,
+      name: userProfile.name,
+      username: userProfile.username,
+      bio: userProfile.bio,
+      _count: {
+        posts: userProfile._count.posts,
+        followedBy: userProfile._count.followedBy,
+        following: userProfile._count.following,
+      },
+      areFollowing: userProfile.followedBy.some(
+        (user) => user.id === req.user?.id,
+      ),
+    };
 
     res.json({
       success: true,
-      user: userProfile,
+      user: finalProfile,
     });
   }),
 ];
