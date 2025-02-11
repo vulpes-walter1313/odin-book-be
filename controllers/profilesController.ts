@@ -1,10 +1,11 @@
 import { validateErrors } from "@/middleware/validation";
 import asyncHandler from "express-async-handler";
-import { matchedData, query } from "express-validator";
+import { matchedData, param, query } from "express-validator";
 import passport from "passport";
 import { type Request, type Response, type NextFunction } from "express";
 import db from "@/db/db";
 import { Prisma } from "@prisma/client";
+import { AppError } from "@/lib/errors";
 
 // GET /profiles
 export const profiles_GET = [
@@ -75,5 +76,50 @@ export const profiles_GET = [
       totalPages: totalPages,
     });
     return;
+  }),
+];
+
+// GET /profiles/:username
+export const profile_GET = [
+  passport.authenticate("jwt", { session: false }),
+  param("username").isLength({ max: 32 }).withMessage("not a valid username"),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const userProfile = await db.user.findUnique({
+      where: {
+        username: data.username,
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        bio: true,
+        _count: {
+          select: {
+            posts: true,
+            followedBy: true,
+            following: true,
+          },
+        },
+      },
+    });
+
+    if (!userProfile) {
+      const error = new AppError(404, "NOT_FOUND", "User not found");
+      res.status(error.status).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+        },
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      user: userProfile,
+    });
   }),
 ];
