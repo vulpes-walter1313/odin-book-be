@@ -13,11 +13,15 @@ import postRouter from "./routes/posts";
 
 import morgan from "morgan";
 import db from "@/db/db";
-import bcrypt from "bcryptjs";
+import cors from "cors";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3000");
 
+app.use(cors({
+  origin: process.env.FE_URL!,
+  optionsSuccessStatus: 200
+}))
 app.use(express.json());
 app.use(morgan("dev"));
 
