@@ -22,10 +22,10 @@ export const profiles_GET = [
     const search = String(data.search || "");
 
     const totalUsers = await db.user.count({
-      where: { username: search },
+      where: search ? { username: search } : {},
     });
     const totalPages = Math.ceil(totalUsers / LIMIT);
-    if (totalPages > page) page = totalPages;
+    if (page > totalPages) page = totalPages;
     const offset = (page - 1) * LIMIT;
 
     const whereOptions: Prisma.UserWhereInput = {};
@@ -62,6 +62,7 @@ export const profiles_GET = [
         name: user.name,
         username: user.username,
         bio: user.bio,
+        profileImg: user.profileImg,
         _count: {
           followedBy: user._count.followedBy,
         },
@@ -95,6 +96,7 @@ export const profile_GET = [
         name: true,
         username: true,
         bio: true,
+        profileImg: true,
         _count: {
           select: {
             posts: true,
@@ -126,6 +128,7 @@ export const profile_GET = [
       name: userProfile.name,
       username: userProfile.username,
       bio: userProfile.bio,
+      profileImg: userProfile.profileImg,
       _count: {
         posts: userProfile._count.posts,
         followedBy: userProfile._count.followedBy,
