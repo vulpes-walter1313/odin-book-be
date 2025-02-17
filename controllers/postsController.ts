@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import passport from "passport";
-import { matchedData, query } from "express-validator";
+import { body, matchedData, query } from "express-validator";
 import { validateErrors } from "@/middleware/validation";
 import asyncHandler from "express-async-handler";
 import db from "@/db/db";
@@ -170,8 +170,19 @@ export const getPosts_GET = [
     }
     // handle logic for personal feed posts
     if (feed === "personal") {
-      const totalPosts = await db.post.count();
-      const totalPages = Math.ceil(totalPosts / LIMIT);
+      // TODO: add where clause to count only personal feed posts.
+      const totalPosts = await db.post.count({
+        where: {
+          author: {
+            followedBy: {
+              some: {
+                id: req.user?.id,
+              },
+            },
+          },
+        },
+      });
+      const totalPages = Math.ceil(totalPosts === 0 ? 1 : totalPosts / LIMIT);
       if (page > totalPages) page = totalPages;
 
       const offset = (page - 1) * LIMIT;
