@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import passport from "passport";
-import { body, matchedData, query } from "express-validator";
+import { body, matchedData, param, query } from "express-validator";
 import { validateErrors } from "@/middleware/validation";
 import asyncHandler from "express-async-handler";
 import db from "@/db/db";
@@ -102,12 +102,34 @@ export const getPosts_GET = [
               comments: true,
             },
           },
+          userLikes: {
+            select: {
+              id: true,
+            },
+          },
         },
         orderBy: [orderByValue, { id: "asc" }],
       });
+      // TODO: transform the posts to include a boolean true
+      // if loggedin user likes the post
+      //
+      const finalPost = posts.map((post) => {
+        return {
+          id: post.id,
+          _count: {
+            userLikes: post._count.userLikes,
+            comments: post._count.comments,
+          },
+          caption: post.caption,
+          imageUrl: post.imageUrl,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+          likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+        };
+      });
       res.json({
         success: true,
-        posts: posts,
+        posts: finalPost,
         currentPage: page,
         totalPages: totalPages,
       });
@@ -157,12 +179,37 @@ export const getPosts_GET = [
               comments: true,
             },
           },
+          userLikes: {
+            select: {
+              id: true,
+            },
+          },
         },
         orderBy: [orderByValue, { id: "asc" }],
       });
+
+      const finalPosts = posts.map((post) => {
+        return {
+          id: post.id,
+          caption: post.caption,
+          imageUrl: post.imageUrl,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+          author: {
+            username: post.author.username,
+            name: post.author.name,
+            profileImg: post.author.profileImg,
+          },
+          _count: {
+            userLikes: post._count.userLikes,
+            comments: post._count.comments,
+          },
+          likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+        };
+      });
       res.json({
         success: true,
-        posts: posts,
+        posts: finalPosts,
         currentPage: page,
         totalPages: totalPages,
       });
@@ -201,36 +248,8 @@ export const getPosts_GET = [
         orderByValue.userLikes = { _count: "desc" };
       }
 
-      // const usersFollowing = await db.user.findUnique({
-      //   where: {
-      //     id: req.user?.id
-      //   },
-      //   select: {
-      //     following: {
-      //       select: {
-      //         id: true
-      //       }
-      //     }
-      //   }
-      // });
-      // if (!usersFollowing) {
-      //   const error = new AppError(404, "NOT_FOUND", "Current User Not Found");
-      //   res.status(error.status).json({
-      //     success: false,
-      //     error: {
-      //       code: error.code,
-      //       message: error.message
-      //     }
-      //   });
-      //   return;
-      // }
-      // const followingIds = usersFollowing.following.map(user => user.id);
-
       const posts = await db.post.findMany({
         where: {
-          // authorId: {
-          //   in: followingIds
-          // }
           author: {
             followedBy: {
               some: {
@@ -260,16 +279,139 @@ export const getPosts_GET = [
               comments: true,
             },
           },
+          userLikes: {
+            select: {
+              id: true,
+            },
+          },
         },
         orderBy: [orderByValue, { id: "asc" }],
       });
+      const finalPosts = posts.map((post) => {
+        return {
+          id: post.id,
+          caption: post.caption,
+          imageUrl: post.imageUrl,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+          author: {
+            username: post.author.username,
+            name: post.author.name,
+            profileImg: post.author.profileImg,
+          },
+          _count: {
+            userLikes: post._count.userLikes,
+            comments: post._count.comments,
+          },
+          likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+        };
+      });
       res.json({
         success: true,
-        posts: posts,
+        posts: finalPosts,
         currentPage: page,
         totalPages: totalPages,
       });
       return;
     }
+  }),
+];
+
+// POST /posts/:postId/likes
+export const likePost_POST = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt(),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const postId = parseInt(data.postId);
+    console.log({ data, postId });
+
+    const post = await db.post.findUnique({
+      where: {
+        id: postId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!post) {
+      const error = new AppError(404, "NOT_FOUND", "post not found");
+      res.status(error.status).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+        },
+      });
+      return;
+    }
+    await db.post.update({
+      where: {
+        id: post.id,
+      },
+      data: {
+        userLikes: {
+          connect: {
+            id: req.user?.id,
+          },
+        },
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "post liked",
+    });
+  }),
+];
+
+// DELETE /posts/:postId/like
+export const unlikePost_DELETE = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt(),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const postId = parseInt(data.postId);
+
+    const post = await db.post.findUnique({
+      where: {
+        id: postId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!post) {
+      const error = new AppError(404, "NOT_FOUND", "post not found");
+      res.status(error.status).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+        },
+      });
+      return;
+    }
+    await db.post.update({
+      where: {
+        id: post.id,
+      },
+      data: {
+        userLikes: {
+          disconnect: {
+            id: req.user?.id,
+          },
+        },
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "post unliked",
+    });
   }),
 ];
