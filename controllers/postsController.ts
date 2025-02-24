@@ -415,3 +415,242 @@ export const unlikePost_DELETE = [
     });
   }),
 ];
+
+// GET /posts/:postId/comments
+export const getComments_GET = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt(),
+  query("page").isInt({ gt: 0 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const postId = parseInt(data.postId);
+    let page = parseInt(data.page);
+    const LIMIT = 25;
+
+    const post = await db.post.findUnique({
+      where: {
+        id: postId,
+      },
+    });
+    if (!post) {
+      const error = new AppError(404, "NOT_FOUND", "Post Not Found");
+      res.status(error.status).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+        },
+      });
+      return;
+    }
+
+    const totalComments = await db.comment.count({
+      where: {
+        postId: postId,
+      },
+    });
+    const totalPages = Math.ceil(totalComments / LIMIT);
+    if (page > totalPages) page = totalPages;
+    const offset = (page - 1) * LIMIT;
+
+    const comments = await db.comment.findMany({
+      where: {
+        postId: postId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip: offset,
+      take: LIMIT,
+      select: {
+        id: true,
+        author: {
+          select: {
+            name: true,
+            profileImg: true,
+          },
+        },
+        message: true,
+        createdAt: true,
+        updatedAt: true,
+        postId: true,
+        _count: {
+          select: {
+            userLikes: true,
+          },
+        },
+        userLikes: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+    const finalComments = comments.map((comment) => ({
+      id: comment.id,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      message: comment.message,
+      postId: comment.postId,
+      author: {
+        name: comment.author.name,
+        profileImg: comment.author.profileImg,
+      },
+      _count: {
+        userLikes: comment._count.userLikes,
+      },
+      userLikedComment: comment.userLikes.some(
+        (user) => user.id === req.user?.id,
+      ),
+    }));
+
+    res.json({
+      success: true,
+      comments: finalComments,
+      totalPages: totalPages,
+      currentPage: page,
+    });
+    return;
+  }),
+];
+
+// POST /posts/:postId/comments
+export const postComment_POST = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt({ gt: 0 }),
+  body("message")
+    .trim()
+    .isLength({ min: 1, max: 2048 })
+    .withMessage("Comment should be less than 2048 characters"),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const postId = parseInt(data.postId);
+    const message = String(data.message);
+
+    const post = await db.post.findUnique({
+      where: {
+        id: postId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!post) {
+      const error = new AppError(404, "NOT_FOUND", "Post not found");
+      res.status(error.status).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+        },
+      });
+    }
+
+    const result = await db.comment.create({
+      data: {
+        authorId: req.user?.id!,
+        message: message,
+        postId: postId,
+      },
+    });
+    res.json({
+      success: true,
+      message: "Comment created",
+      comment: result,
+    });
+  }),
+];
+
+// POST /posts/:postId/comments/:commentId/like
+export const likeComment_POST = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt({ gt: 0 }),
+  param("commentId").isInt({ gt: 0 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+
+    const postId = parseInt(data.postId);
+    const commentId = parseInt(data.commentId);
+
+    const comment = await db.comment.findUnique({
+      where: {
+        id: commentId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!comment) {
+      const error = new AppError(404, "NOT_FOUND", "Comment not found");
+      next(error);
+      return;
+    }
+
+    await db.comment.update({
+      where: {
+        id: commentId,
+      },
+      data: {
+        userLikes: {
+          connect: {
+            id: req.user?.id,
+          },
+        },
+      },
+    });
+    res.json({
+      success: true,
+      message: "Comment Liked successfully",
+    });
+  }),
+];
+
+// DELETE /posts/:postId/comments/:commentId/like
+export const likeComment_DELETE = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt({ gt: 0 }),
+  param("commentId").isInt({ gt: 0 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+
+    const postId = parseInt(data.postId);
+    const commentId = parseInt(data.commentId);
+
+    const comment = await db.comment.findUnique({
+      where: {
+        id: commentId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!comment) {
+      const error = new AppError(404, "NOT_FOUND", "Comment not found");
+      next(error);
+      return;
+    }
+
+    await db.comment.update({
+      where: {
+        id: commentId,
+      },
+      data: {
+        userLikes: {
+          disconnect: {
+            id: req.user?.id,
+          },
+        },
+      },
+    });
+    res.json({
+      success: true,
+      message: "Comment Unliked successfully",
+    });
+  }),
+];

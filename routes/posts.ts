@@ -6,4 +6,14 @@ const router = express.Router();
 router.get("/", postsController.getPosts_GET);
 router.post("/:postId/likes", postsController.likePost_POST);
 router.delete("/:postId/likes", postsController.unlikePost_DELETE);
+router.get("/:postId/comments", postsController.getComments_GET);
+router.post("/:postId/comments", postsController.postComment_POST);
+router.post(
+  "/:postId/comments/:commentId/like",
+  postsController.likeComment_POST,
+);
+router.delete(
+  "/:postId/comments/:commentId/like",
+  postsController.likeComment_DELETE,
+);
 export default router;
