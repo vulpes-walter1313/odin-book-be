@@ -14,6 +14,7 @@ import postRouter from "./routes/posts";
 import morgan from "morgan";
 import db from "@/db/db";
 import cors from "cors";
+import { AppError } from "./lib/errors";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3000");
@@ -70,15 +71,32 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // error handler
-app.use((err: HttpError, req: Request, res: Response, next: NextFunction) => {
-  res.status(err.status || 500).json({
-    success: false,
-    error: {
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Unexpected server error",
-    },
-  });
-});
+app.use(
+  (
+    err: HttpError | AppError,
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    if (err instanceof AppError) {
+      res.status(err.status).json({
+        success: false,
+        error: {
+          code: err.code,
+          message: err.message,
+          details: err.details,
+        },
+      });
+    }
+    res.status(err.status || 500).json({
+      success: false,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Unexpected server error",
+      },
+    });
+  },
+);
 
 const server = createServer(app);
 server.listen(PORT);
