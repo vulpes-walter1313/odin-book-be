@@ -566,6 +566,77 @@ export const postComment_POST = [
   }),
 ];
 
+// PUT /posts/:postId/comments/:commentId
+export const editComment_PUT = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt({ gt: 0 }),
+  param("commentId").isInt({ gt: 0 }),
+  body("message")
+    .trim()
+    .isLength({ min: 1, max: 2048 })
+    .withMessage("message must be between 1 and 2048 characters"),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+
+    const postId = parseInt(data.postId);
+    const commentId = parseInt(data.commentId);
+    const message = String(data.message);
+
+    const originalComment = await db.comment.findUnique({
+      where: {
+        id: commentId,
+      },
+      select: {
+        id: true,
+        authorId: true,
+      },
+    });
+    if (!originalComment) {
+      const error = new AppError(404, "NOT_FOUND", "Comment not found");
+      next(error);
+      return;
+    }
+    const user = await db.user.findUnique({
+      where: {
+        id: req.user?.id,
+      },
+      select: {
+        id: true,
+        role: true,
+      },
+    });
+    if (!user) {
+      const error = new AppError(401, "UNAUTHORIZED", "User not found");
+      next(error);
+      return;
+    }
+    const canEdit =
+      user.role === "ADMIN" || originalComment.authorId === user.id;
+    if (!canEdit) {
+      const error = new AppError(
+        403,
+        "FORBIDDEN",
+        "You are forbidden from performing this action",
+      );
+      next(error);
+      return;
+    }
+    await db.comment.update({
+      where: {
+        id: originalComment.id,
+      },
+      data: {
+        message: message,
+      },
+    });
+    res.json({
+      success: true,
+      message: "comment updated successfully",
+    });
+  }),
+];
+
 // DELETE /posts/:postId/comments/:commentId
 export const deleteComment_DELETE = [
   passport.authenticate("jwt", { session: false }),
