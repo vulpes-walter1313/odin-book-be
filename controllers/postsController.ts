@@ -566,6 +566,70 @@ export const postComment_POST = [
   }),
 ];
 
+// DELETE /posts/:postId/comments/:commentId
+export const deleteComment_DELETE = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt({ gt: 0 }),
+  param("commentId").isInt({ gt: 0 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+
+    const postId = parseInt(data.postId);
+    const commentId = parseInt(data.commentId);
+
+    const comment = await db.comment.findUnique({
+      where: {
+        id: commentId,
+      },
+      select: {
+        id: true,
+        authorId: true,
+      },
+    });
+    if (!comment) {
+      const error = new AppError(404, "NOT_FOUND", "Comment not found");
+      next(error);
+      return;
+    }
+    const user = await db.user.findUnique({
+      where: {
+        id: req.user?.id,
+      },
+      select: {
+        id: true,
+        role: true,
+      },
+    });
+    if (!user) {
+      const error = new AppError(401, "UNAUTHORIZED", "User not in db");
+      next(error);
+      return;
+    }
+
+    const canDelete = user.role === "ADMIN" || user.id === comment.authorId;
+    if (!canDelete) {
+      const error = new AppError(
+        403,
+        "FORBIDDEN",
+        "You are not admin nor the author of this comment",
+      );
+      next(error);
+      return;
+    }
+
+    await db.comment.delete({
+      where: {
+        id: comment.id,
+      },
+    });
+    res.json({
+      success: true,
+      message: "Successfully deleted comment",
+    });
+  }),
+];
+
 // POST /posts/:postId/comments/:commentId/like
 export const likeComment_POST = [
   passport.authenticate("jwt", { session: false }),

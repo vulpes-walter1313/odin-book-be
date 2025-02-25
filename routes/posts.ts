@@ -8,6 +8,10 @@ router.post("/:postId/likes", postsController.likePost_POST);
 router.delete("/:postId/likes", postsController.unlikePost_DELETE);
 router.get("/:postId/comments", postsController.getComments_GET);
 router.post("/:postId/comments", postsController.postComment_POST);
+router.delete(
+  "/:postId/comments/:commentId",
+  postsController.deleteComment_DELETE,
+);
 router.post(
   "/:postId/comments/:commentId/like",
   postsController.likeComment_POST,
