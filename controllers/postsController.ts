@@ -467,6 +467,7 @@ export const getComments_GET = [
         id: true,
         author: {
           select: {
+            id: true,
             name: true,
             profileImg: true,
           },
@@ -494,6 +495,7 @@ export const getComments_GET = [
       message: comment.message,
       postId: comment.postId,
       author: {
+        id: comment.author.id,
         name: comment.author.name,
         profileImg: comment.author.profileImg,
       },
@@ -503,6 +505,7 @@ export const getComments_GET = [
       userLikedComment: comment.userLikes.some(
         (user) => user.id === req.user?.id,
       ),
+      userIsAuthor: comment.author.id === req.user?.id,
     }));
 
     res.json({
