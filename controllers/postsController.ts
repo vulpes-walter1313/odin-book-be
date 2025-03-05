@@ -170,6 +170,7 @@ export const getPosts_GET = [
           updatedAt: true,
           author: {
             select: {
+              id: true,
               name: true,
               username: true,
               profileImg: true,
@@ -207,6 +208,7 @@ export const getPosts_GET = [
             comments: post._count.comments,
           },
           likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+          userIsAuthor: req.user?.id === post.author.id,
         };
       });
       res.json({
@@ -270,6 +272,7 @@ export const getPosts_GET = [
           updatedAt: true,
           author: {
             select: {
+              id: true,
               name: true,
               username: true,
               profileImg: true,
@@ -306,6 +309,7 @@ export const getPosts_GET = [
             comments: post._count.comments,
           },
           likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+          userIsAuthor: req.user?.id === post.author.id,
         };
       });
       res.json({
@@ -360,6 +364,42 @@ export const createPost_POST = [
   }),
 ];
 
+// GET /posts/:postId
+
+export const getPost_GET = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt({ gt: 0 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const postId = parseInt(data.postId);
+
+    const post = await db.post.findUnique({
+      where: {
+        id: postId,
+      },
+      select: {
+        id: true,
+        caption: true,
+        imageUrl: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+          },
+        },
+      },
+    });
+    if (!post) {
+      throw new AppError(404, "NOT_FOUND", "Post not found");
+    }
+
+    res.json({
+      post: post,
+    });
+  }),
+];
 // DELETE /posts/:postId
 export const deletePost_DELETE = [
   passport.authenticate("jwt", { session: false }),
