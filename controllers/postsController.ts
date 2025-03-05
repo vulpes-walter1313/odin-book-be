@@ -5,7 +5,9 @@ import { validateErrors } from "@/middleware/validation";
 import asyncHandler from "express-async-handler";
 import db from "@/db/db";
 import { AppError } from "@/lib/errors";
-import { Prisma } from "@prisma/client";
+import { upload } from "@/middleware/multer";
+import cloudinary from "@/lib/cloudinaryUploader";
+import fs from "node:fs/promises";
 
 // GET /posts
 export const getPosts_GET = [
@@ -314,6 +316,120 @@ export const getPosts_GET = [
       });
       return;
     }
+  }),
+];
+
+// POST /posts
+export const createPost_POST = [
+  passport.authenticate("jwt", { session: false }),
+  upload.single("image"),
+  body("caption").trim().isLength({ min: 1, max: 2048 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+
+    console.log({ data, file: req?.file });
+    // upload image and get public url back
+
+    if (!req.file) {
+      throw new AppError(400, "VALIDATION_ERROR", "File is not attached");
+    }
+    const uploadResult = await cloudinary.uploader.upload(req.file?.path, {
+      use_filename: true,
+      asset_folder: "odin-book",
+    });
+
+    // save post to db
+    const newPost = await db.post.create({
+      data: {
+        authorId: req.user?.id!,
+        caption: data.caption,
+        imageUrl: uploadResult.secure_url,
+        imageId: uploadResult.public_id,
+      },
+    });
+
+    // if successful, delete image from local system
+    await fs.rm(req.file.path);
+
+    // return success message
+    res.json({
+      success: true,
+      message: "post created successfully",
+    });
+  }),
+];
+
+// DELETE /posts/:postId
+export const deletePost_DELETE = [
+  passport.authenticate("jwt", { session: false }),
+  param("postId").isInt({ gt: 0 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const postId: number = parseInt(data.postId);
+
+    const post = await db.post.findUnique({
+      where: {
+        id: postId,
+      },
+      select: {
+        id: true,
+        author: {
+          select: {
+            id: true,
+            role: true,
+          },
+        },
+        imageId: true,
+        imageUrl: true,
+      },
+    });
+    if (!post) {
+      throw new AppError(404, "NOT_FOUND", "Post not found");
+    }
+
+    if (!req.user) {
+      throw new AppError(
+        500,
+        "INTERNAL_SERVER_ERROR",
+        "Current user not found",
+      );
+    }
+
+    const canDelete =
+      req.user.role === "ADMIN" || req.user.id === post.author.id;
+    if (!canDelete) {
+      throw new AppError(
+        403,
+        "FORBIDDEN",
+        "You are not allowed to perform this action",
+      );
+    }
+    // TODO: Delete image from cloudinary
+    if (post.imageId) {
+      const result = await cloudinary.uploader.destroy(post.imageId);
+      if (result.result === "ok") {
+        console.log("Image deleted from cloudinary");
+        await db.post.delete({
+          where: {
+            id: post.id,
+          },
+        });
+        res.json({ success: true, message: "Post deleted successfuly" });
+        return;
+      }
+    }
+
+    // TODO: delete DB record
+    await db.post.delete({
+      where: {
+        id: post.id,
+      },
+    });
+
+    // TODO: return response.
+    res.json({ success: true, message: "Post deleted successfuly" });
   }),
 ];
 

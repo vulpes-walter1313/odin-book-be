@@ -9,6 +9,7 @@ declare global {
       email: string;
       profileImg: string | null;
       bannedUntil: Date | null;
+      role: "ADMIN" | "USER";
     }
   }
 }

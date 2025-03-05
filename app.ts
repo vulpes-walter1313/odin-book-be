@@ -48,6 +48,7 @@ passport.use(
             email: true,
             bannedUntil: true,
             profileImg: true,
+            role: true,
           },
         });
         if (!user) {
