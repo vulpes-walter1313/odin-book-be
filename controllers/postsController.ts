@@ -365,7 +365,6 @@ export const createPost_POST = [
 ];
 
 // GET /posts/:postId
-
 export const getPost_GET = [
   passport.authenticate("jwt", { session: false }),
   param("postId").isInt({ gt: 0 }),
@@ -400,6 +399,76 @@ export const getPost_GET = [
     });
   }),
 ];
+
+// PUT /posts/:postId
+export const editPost_PUT = [
+  passport.authenticate("jwt", { session: false }),
+  upload.single("image"),
+  param("postId").isInt({ gt: 0 }),
+  body("caption").isLength({ min: 1, max: 2048 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const caption = String(data.caption);
+    const postId: number = parseInt(data.postId);
+
+    const originalPost = await db.post.findUnique({
+      where: {
+        id: postId,
+      },
+      select: {
+        id: true,
+        imageId: true,
+      },
+    });
+    // TODO: upload new image
+    if (!req.file) {
+      throw new AppError(
+        500,
+        "INTERNAL_SERVER_ERROR",
+        "file to upload not found",
+      );
+    }
+
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      use_filename: true,
+      asset_folder: "odin-book",
+    });
+
+    // If image uploads successfully,
+    // TODO: delete original image in cloudinary
+    if (originalPost?.imageId) {
+      const deleteImageRes = await cloudinary.uploader.destroy(
+        originalPost?.imageId,
+      );
+      if (deleteImageRes.result === "ok") {
+        console.log("old picture deleted");
+      } else {
+        throw new AppError(
+          500,
+          "INTERNAL_SERVER_ERROR",
+          "Could not delete old image",
+        );
+      }
+    }
+
+    const updatedPost = await db.post.update({
+      where: {
+        id: originalPost?.id,
+      },
+      data: {
+        imageUrl: uploadResult.secure_url,
+        imageId: uploadResult.public_id,
+        caption: caption,
+      },
+    });
+    res.json({
+      message: "Post updated successfully",
+      postId: updatedPost.id,
+    });
+  }),
+];
+
 // DELETE /posts/:postId
 export const deletePost_DELETE = [
   passport.authenticate("jwt", { session: false }),
