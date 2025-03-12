@@ -14,9 +14,9 @@ export const getPosts_GET = [
   passport.authenticate("jwt", { session: false }),
   query("feed")
     .custom((value) => {
-      return ["personal", "explore", "user"].includes(value);
+      return ["personal", "explore", "user", "liked"].includes(value);
     })
-    .withMessage("feed must be: personal, explore, or user"),
+    .withMessage("feed must be: personal, explore, user, or liked"),
   query("sort")
     .custom((value) => {
       return ["popular", "latest", "oldest"].includes(value);
@@ -98,6 +98,14 @@ export const getPosts_GET = [
           imageUrl: true,
           createdAt: true,
           updatedAt: true,
+          author: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              profileImg: true,
+            },
+          },
           _count: {
             select: {
               userLikes: true,
@@ -112,9 +120,7 @@ export const getPosts_GET = [
         },
         orderBy: [orderByValue, { id: "asc" }],
       });
-      // TODO: transform the posts to include a boolean true
-      // if loggedin user likes the post
-      //
+
       const finalPost = posts.map((post) => {
         return {
           id: post.id,
@@ -126,12 +132,116 @@ export const getPosts_GET = [
           imageUrl: post.imageUrl,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
+          author: {
+            id: post.author.id,
+            name: post.author.name,
+            username: post.author.username,
+            profileImg: post.author.profileImg,
+          },
           likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
         };
       });
       res.json({
         success: true,
         posts: finalPost,
+        currentPage: page,
+        totalPages: totalPages,
+      });
+      return;
+    }
+
+    // handle logic for liked posts
+    if (feed === "liked") {
+      const totalPosts = await db.post.count({
+        where: {
+          userLikes: {
+            some: {
+              id: req.user?.id,
+            },
+          },
+        },
+      });
+      const totalPages = Math.ceil(totalPosts / LIMIT);
+      if (page > totalPages) page = totalPages;
+
+      const offset = (page - 1) * LIMIT;
+
+      const orderByValue: {
+        userLikes?: { _count: "asc" | "desc" };
+        createdAt?: "asc" | "desc";
+      } = {};
+      if (sort === "popular") {
+        orderByValue.userLikes = { _count: "desc" };
+      } else if (sort === "latest") {
+        orderByValue.createdAt = "desc";
+      } else if (sort === "oldest") {
+        orderByValue.createdAt = "asc";
+      } else {
+        orderByValue.userLikes = { _count: "desc" };
+      }
+
+      const posts = await db.post.findMany({
+        where: {
+          userLikes: {
+            some: {
+              id: req.user?.id,
+            },
+          },
+        },
+        skip: offset,
+        take: LIMIT,
+        select: {
+          id: true,
+          caption: true,
+          imageUrl: true,
+          createdAt: true,
+          updatedAt: true,
+          author: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              profileImg: true,
+            },
+          },
+          _count: {
+            select: {
+              userLikes: true,
+              comments: true,
+            },
+          },
+          userLikes: {
+            select: {
+              id: true,
+            },
+          },
+        },
+        orderBy: [orderByValue, { id: "asc" }],
+      });
+
+      const finalPosts = posts.map((post) => {
+        return {
+          id: post.id,
+          _count: {
+            userLikes: post._count.userLikes,
+            comments: post._count.comments,
+          },
+          author: {
+            id: post.author.id,
+            name: post.author.name,
+            username: post.author.username,
+            profileImg: post.author.profileImg,
+          },
+          caption: post.caption,
+          imageUrl: post.imageUrl,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+          likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+        };
+      });
+      res.json({
+        success: true,
+        posts: finalPosts,
         currentPage: page,
         totalPages: totalPages,
       });
@@ -199,6 +309,7 @@ export const getPosts_GET = [
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
           author: {
+            id: post.author.id,
             username: post.author.username,
             name: post.author.name,
             profileImg: post.author.profileImg,
@@ -221,7 +332,6 @@ export const getPosts_GET = [
     }
     // handle logic for personal feed posts
     if (feed === "personal") {
-      // TODO: add where clause to count only personal feed posts.
       const totalPosts = await db.post.count({
         where: {
           author: {
@@ -300,6 +410,7 @@ export const getPosts_GET = [
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
           author: {
+            id: post.author.id,
             username: post.author.username,
             name: post.author.name,
             profileImg: post.author.profileImg,
@@ -332,7 +443,6 @@ export const createPost_POST = [
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const data = matchedData(req);
 
-    console.log({ data, file: req?.file });
     // upload image and get public url back
 
     if (!req.file) {
@@ -358,7 +468,6 @@ export const createPost_POST = [
 
     // return success message
     res.json({
-      success: true,
       message: "post created successfully",
     });
   }),
