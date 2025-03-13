@@ -67,7 +67,7 @@ export const getPosts_GET = [
           authorId: user.id,
         },
       });
-      const totalPages = Math.ceil(totalPosts / LIMIT);
+      const totalPages = Math.ceil(totalPosts === 0 ? 1 : totalPosts / LIMIT);
       if (page > totalPages) page = totalPages;
 
       const offset = (page - 1) * LIMIT;
@@ -161,7 +161,7 @@ export const getPosts_GET = [
           },
         },
       });
-      const totalPages = Math.ceil(totalPosts / LIMIT);
+      const totalPages = Math.ceil(totalPosts === 0 ? 1 : totalPosts / LIMIT);
       if (page > totalPages) page = totalPages;
 
       const offset = (page - 1) * LIMIT;
@@ -250,7 +250,7 @@ export const getPosts_GET = [
     // handle logic for explore posts
     if (feed === "explore") {
       const totalPosts = await db.post.count();
-      const totalPages = Math.ceil(totalPosts / LIMIT);
+      const totalPages = Math.ceil(totalPosts === 0 ? 1 : totalPosts / LIMIT);
       if (page > totalPages) page = totalPages;
 
       const offset = (page - 1) * LIMIT;
