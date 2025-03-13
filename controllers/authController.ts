@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import { AppError } from "@/lib/errors";
 import passport from "passport";
 
+// POST /auth/signup
 export const signup_POST = [
   body("name")
     .isLength({ min: 3, max: 48 })
@@ -91,6 +92,7 @@ export const signup_POST = [
   }),
 ];
 
+// POST /auth/signin
 export const signin_POST = [
   body("email").isEmail(),
   body("password").isLength({ min: 1, max: 64 }),
@@ -195,6 +197,7 @@ export const signin_POST = [
   }),
 ];
 
+// POST /auth/refresh
 export const refreshToken_POST = [
   body("refreshToken").isJWT(),
   validateErrors,
@@ -299,6 +302,7 @@ export const refreshToken_POST = [
   }),
 ];
 
+// GET /auth/check
 export const check_GET = [
   passport.authenticate("jwt", { session: false }),
   (req: Request, res: Response, next: NextFunction) => {
