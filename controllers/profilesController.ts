@@ -24,7 +24,7 @@ export const profiles_GET = [
     const totalUsers = await db.user.count({
       where: search ? { username: search } : {},
     });
-    const totalPages = Math.ceil(totalUsers / LIMIT);
+    const totalPages = Math.ceil(totalUsers === 0 ? 1 : totalUsers / LIMIT);
     if (page > totalPages) page = totalPages;
     const offset = (page - 1) * LIMIT;
 
