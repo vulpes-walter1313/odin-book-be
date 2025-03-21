@@ -246,3 +246,112 @@ export const profileUnfollow_DELETE = [
     });
   }),
 ];
+
+// GET /profiles/:username/following
+export const profileFollowing_GET = [
+  passport.authenticate("jwt", { session: false }),
+  param("username")
+    .isLength({ min: 3, max: 32 })
+    .withMessage("Not a valid username"),
+  query("page").isInt({ gt: 0 }).withMessage("must be positive integer"),
+  query("limit")
+    .isInt({ gt: 10, lt: 50 })
+    .withMessage("Limit should be between 10 and 50"),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const username = String(data.username);
+    let page = parseInt(data.page);
+    const LIMIT = parseInt(data.limit);
+
+    // get list of users that :username is following
+    const userSpotlighted = await db.user.findUnique({
+      where: {
+        username: username,
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+      },
+    });
+
+    if (!userSpotlighted) {
+      throw new AppError(404, "NOT_FOUND", "User not found");
+    }
+    const totalUsers = await db.user.count({
+      where: {
+        followedBy: {
+          some: {
+            id: userSpotlighted.id,
+          },
+        },
+      },
+    });
+    const totalPages = Math.ceil(totalUsers === 0 ? 1 : totalUsers / LIMIT);
+    if (page > totalPages) page = totalPages;
+    const offset = (page - 1) * LIMIT;
+
+    const userList = await db.user.findMany({
+      where: {
+        followedBy: {
+          some: {
+            id: userSpotlighted.id,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        bio: true,
+        profileImg: true,
+        _count: {
+          select: {
+            followedBy: true,
+            following: true,
+          },
+        },
+        followedBy: {
+          select: {
+            id: true,
+          },
+        },
+      },
+      orderBy: [
+        {
+          followedBy: {
+            _count: "desc",
+          },
+        },
+        {
+          id: "asc",
+        },
+      ],
+      skip: offset,
+      take: LIMIT,
+    });
+
+    // transform users to see if req.user is also following the listed users.
+    const finalList = userList.map((user) => ({
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      bio: user.bio,
+      profileImg: user.profileImg,
+      _count: {
+        followedBy: user._count.followedBy,
+        following: user._count.following,
+      },
+      areFollowing: user.followedBy.some(
+        (followedByUser) => followedByUser.id === req.user?.id,
+      ),
+    }));
+
+    res.json({
+      users: finalList,
+      currentPage: page,
+      totalPages: totalPages,
+    });
+  }),
+];
