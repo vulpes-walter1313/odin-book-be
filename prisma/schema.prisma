@@ -21,6 +21,7 @@ model User {
   name         String    @map("name") @db.VarChar(48)
   bio          String?   @map("bio") @db.VarChar(512)
   profileImg   String?   @map("profile_img")
+  profileImgId String?   @map("profile_img_id")
   role         Role      @default(USER) @map("role")
   lastLogin    DateTime? @map("last_login") @db.Timestamptz()
   bannedUntil  DateTime? @map("banned_until") @db.Timestamptz
