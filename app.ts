@@ -10,6 +10,7 @@ import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
 import authRouter from "./routes/auth";
 import profilesRouter from "./routes/profiles";
 import postRouter from "./routes/posts";
+import accountRouter from "./routes/account";
 
 import morgan from "morgan";
 import db from "@/db/db";
@@ -65,6 +66,7 @@ passport.use(
 app.use("/auth", authRouter);
 app.use("/profiles", profilesRouter);
 app.use("/posts", postRouter);
+app.use("/account", accountRouter);
 
 // catch all 404 and forward to Error Handler
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -89,6 +91,7 @@ app.use(
         },
       });
     }
+    console.log("error handler", err);
     res.status(err.status || 500).json({
       success: false,
       error: {
