@@ -4,5 +4,6 @@ import * as accountController from "../controllers/accountController";
 const router = express.Router();
 
 // All routes prefixed with /account
-router.get("/", accountController.account_GET);
+router.get("/user", accountController.account_GET);
+router.put("/user", accountController.editAccountInfo_PUT);
 export default router;
