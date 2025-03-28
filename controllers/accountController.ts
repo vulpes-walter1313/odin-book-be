@@ -9,6 +9,8 @@ import { upload } from "@/middleware/multer";
 import cloudinary from "@/lib/cloudinaryUploader";
 import fs from "node:fs/promises";
 import { Prisma } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
 // GET /account/user
 export const account_GET = [
   passport.authenticate("jwt", { session: false }),
@@ -102,5 +104,59 @@ export const editAccountInfo_PUT = [
       },
     });
     res.json({ message: "User profile updated without profile image" });
+  }),
+];
+
+export const updatePassword_PUT = [
+  passport.authenticate("jwt", { session: false }),
+  body("oldPassword").notEmpty(),
+  body("newPassword")
+    .isLength({ min: 8, max: 48 })
+    .withMessage("New password must be between 8 and 48 characters"),
+  body("confirmNewPassword")
+    .custom((val, { req }) => {
+      return val === req.body.newPassword;
+    })
+    .withMessage("New password and confirm new passwords don't match"),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const oldPassword = String(data.oldPassword);
+    const newPassword = String(data.newPassword);
+
+    const currentUser = await db.user.findUnique({
+      where: {
+        id: req.user?.id,
+      },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+    if (!currentUser) {
+      throw new AppError(404, "NOT_FOUND", "User not found");
+    }
+
+    const passwordValid = await bcrypt.compare(
+      oldPassword,
+      currentUser.password,
+    );
+
+    if (!passwordValid) {
+      throw new AppError(403, "FORBIDDEN", "Password is not valid");
+      return;
+    }
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    await db.user.update({
+      where: {
+        id: currentUser.id,
+      },
+      data: {
+        password: newPasswordHash,
+      },
+    });
+    res.json({ message: "Password updated" });
+    return;
   }),
 ];
