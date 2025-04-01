@@ -90,6 +90,7 @@ app.use(
           details: err.details,
         },
       });
+      return;
     }
     console.log("error handler", err);
     res.status(err.status || 500).json({
@@ -99,6 +100,7 @@ app.use(
         message: "Unexpected server error",
       },
     });
+    return;
   },
 );
 
