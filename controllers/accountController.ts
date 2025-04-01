@@ -160,3 +160,54 @@ export const updatePassword_PUT = [
     return;
   }),
 ];
+
+export const updateUsername_PUT = [
+  passport.authenticate("jwt", { session: false }),
+  body("newUsername")
+    .isLength({ min: 3, max: 32 })
+    .custom((val) => {
+      // checks if username doesn't have special characters
+      // and does not start with an @ symbol
+      return /^[a-zA-Z]\w+[^-_$%#@!&*()]$/.test(val);
+    }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const newUsername = String(data.newUsername);
+    const currentUser = await db.user.findUnique({
+      where: {
+        id: req.user?.id,
+      },
+      select: {
+        id: true,
+        username: true,
+      },
+    });
+    if (!currentUser) {
+      throw new AppError(404, "NOT_FOUND", "User not found");
+    }
+    const isUsernameTaken = await db.user.findUnique({
+      where: {
+        username: newUsername,
+      },
+      select: {
+        id: true,
+        username: true,
+      },
+    });
+    if (isUsernameTaken) {
+      throw new AppError(403, "FORBIDDEN", "Username already taken");
+      return;
+    }
+    await db.user.update({
+      where: {
+        id: currentUser.id,
+      },
+      data: {
+        username: newUsername,
+      },
+    });
+
+    res.json({ message: "Username successfully updated" });
+  }),
+];
