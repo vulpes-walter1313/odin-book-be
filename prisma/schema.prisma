@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["strictUndefinedChecks"]
 }
 
@@ -26,43 +26,84 @@ model User {
   role         Role      @default(USER) @map("role")
   lastLogin    DateTime? @map("last_login") @db.Timestamptz()
   bannedUntil  DateTime? @map("banned_until") @db.Timestamptz
-  posts        Post[]
-  following    User[]    @relation("UserFollows")
-  followedBy   User[]    @relation("UserFollows")
-  postLikes    Post[]    @relation("UserLikedPost")
-  commentLikes Comment[] @relation("UserLikedComment")
-  Comment      Comment[]
+
+  posts    Post[]
+  comments Comment[]
+
+  following UserFollows[] @relation("Following")
+  followers UserFollows[] @relation("Followers")
+
+  postLikes    PostLike[]
+  commentLikes CommentLike[]
 
   @@map("users")
 }
 
 model Post {
-  id        Int       @id @default(autoincrement()) @map("id")
-  caption   String    @map("caption") @db.VarChar(2048)
-  imageUrl  String?   @map("image_url")
-  imageId   String?   @map("image_id")
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId  String    @map("author_id")
-  userLikes User[]    @relation("UserLikedPost")
-  comments  Comment[]
+  id        Int      @id @default(autoincrement()) @map("id")
+  caption   String   @map("caption") @db.VarChar(2048)
+  imageUrl  String?  @map("image_url")
+  imageId   String?  @map("image_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String @map("author_id")
+
+  comments Comment[]
+  likes    PostLike[]
 
   @@map("posts")
 }
 
 model Comment {
   id        Int      @id @default(autoincrement()) @map("id")
-  authorId  String   @map("author_id")
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   message   String   @map("message") @db.VarChar(2048)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
-  userLikes User[]   @relation("UserLikedComment")
-  postId    Int      @map("post_id")
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String @map("author_id")
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId Int  @map("post_id")
+
+  likes CommentLike[]
 
   @@map("comments")
+}
+
+model UserFollows {
+  followerId  String
+  followingId String
+
+  follower  User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("user_follows")
+}
+
+model PostLike {
+  userId String
+  postId Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@map("post_likes")
+}
+
+model CommentLike {
+  userId    String
+  commentId Int
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, commentId])
+  @@map("comment_likes")
 }
 
 enum Role {
