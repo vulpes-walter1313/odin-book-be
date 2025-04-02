@@ -73,17 +73,17 @@ export const getPosts_GET = [
       const offset = (page - 1) * LIMIT;
 
       const orderByValue: {
-        userLikes?: { _count: "asc" | "desc" };
+        likes?: { _count: "asc" | "desc" };
         createdAt?: "asc" | "desc";
       } = {};
       if (sort === "popular") {
-        orderByValue.userLikes = { _count: "desc" };
+        orderByValue.likes = { _count: "desc" };
       } else if (sort === "latest") {
         orderByValue.createdAt = "desc";
       } else if (sort === "oldest") {
         orderByValue.createdAt = "asc";
       } else {
-        orderByValue.userLikes = { _count: "desc" };
+        orderByValue.likes = { _count: "desc" };
       }
 
       const posts = await db.post.findMany({
@@ -108,13 +108,13 @@ export const getPosts_GET = [
           },
           _count: {
             select: {
-              userLikes: true,
+              likes: true,
               comments: true,
             },
           },
-          userLikes: {
+          likes: {
             select: {
-              id: true,
+              userId: true,
             },
           },
         },
@@ -125,7 +125,7 @@ export const getPosts_GET = [
         return {
           id: post.id,
           _count: {
-            userLikes: post._count.userLikes,
+            userLikes: post._count.likes,
             comments: post._count.comments,
           },
           caption: post.caption,
@@ -138,7 +138,7 @@ export const getPosts_GET = [
             username: post.author.username,
             profileImg: post.author.profileImg,
           },
-          likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+          likedByUser: post.likes.some((user) => user.userId === req.user?.id),
         };
       });
       res.json({
@@ -154,9 +154,9 @@ export const getPosts_GET = [
     if (feed === "liked") {
       const totalPosts = await db.post.count({
         where: {
-          userLikes: {
+          likes: {
             some: {
-              id: req.user?.id,
+              userId: req.user?.id,
             },
           },
         },
@@ -167,24 +167,24 @@ export const getPosts_GET = [
       const offset = (page - 1) * LIMIT;
 
       const orderByValue: {
-        userLikes?: { _count: "asc" | "desc" };
+        likes?: { _count: "asc" | "desc" };
         createdAt?: "asc" | "desc";
       } = {};
       if (sort === "popular") {
-        orderByValue.userLikes = { _count: "desc" };
+        orderByValue.likes = { _count: "desc" };
       } else if (sort === "latest") {
         orderByValue.createdAt = "desc";
       } else if (sort === "oldest") {
         orderByValue.createdAt = "asc";
       } else {
-        orderByValue.userLikes = { _count: "desc" };
+        orderByValue.likes = { _count: "desc" };
       }
 
       const posts = await db.post.findMany({
         where: {
-          userLikes: {
+          likes: {
             some: {
-              id: req.user?.id,
+              userId: req.user?.id,
             },
           },
         },
@@ -206,13 +206,13 @@ export const getPosts_GET = [
           },
           _count: {
             select: {
-              userLikes: true,
+              likes: true,
               comments: true,
             },
           },
-          userLikes: {
+          likes: {
             select: {
-              id: true,
+              userId: true,
             },
           },
         },
@@ -223,7 +223,7 @@ export const getPosts_GET = [
         return {
           id: post.id,
           _count: {
-            userLikes: post._count.userLikes,
+            userLikes: post._count.likes,
             comments: post._count.comments,
           },
           author: {
@@ -236,7 +236,7 @@ export const getPosts_GET = [
           imageUrl: post.imageUrl,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
-          likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+          likedByUser: post.likes.some((user) => user.userId === req.user?.id),
         };
       });
       res.json({
@@ -256,17 +256,17 @@ export const getPosts_GET = [
       const offset = (page - 1) * LIMIT;
 
       const orderByValue: {
-        userLikes?: { _count: "asc" | "desc" };
+        likes?: { _count: "asc" | "desc" };
         createdAt?: "asc" | "desc";
       } = {};
       if (sort === "popular") {
-        orderByValue.userLikes = { _count: "desc" };
+        orderByValue.likes = { _count: "desc" };
       } else if (sort === "latest") {
         orderByValue.createdAt = "desc";
       } else if (sort === "oldest") {
         orderByValue.createdAt = "asc";
       } else {
-        orderByValue.userLikes = { _count: "desc" };
+        orderByValue.likes = { _count: "desc" };
       }
 
       const posts = await db.post.findMany({
@@ -288,13 +288,13 @@ export const getPosts_GET = [
           },
           _count: {
             select: {
-              userLikes: true,
+              likes: true,
               comments: true,
             },
           },
-          userLikes: {
+          likes: {
             select: {
-              id: true,
+              userId: true,
             },
           },
         },
@@ -315,10 +315,10 @@ export const getPosts_GET = [
             profileImg: post.author.profileImg,
           },
           _count: {
-            userLikes: post._count.userLikes,
+            userLikes: post._count.likes,
             comments: post._count.comments,
           },
-          likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+          likedByUser: post.likes.some((user) => user.userId === req.user?.id),
           userIsAuthor: req.user?.id === post.author.id,
         };
       });
@@ -335,9 +335,9 @@ export const getPosts_GET = [
       const totalPosts = await db.post.count({
         where: {
           author: {
-            followedBy: {
+            followers: {
               some: {
-                id: req.user?.id,
+                followerId: req.user?.id,
               },
             },
           },
@@ -349,25 +349,25 @@ export const getPosts_GET = [
       const offset = (page - 1) * LIMIT;
 
       const orderByValue: {
-        userLikes?: { _count: "asc" | "desc" };
+        likes?: { _count: "asc" | "desc" };
         createdAt?: "asc" | "desc";
       } = {};
       if (sort === "popular") {
-        orderByValue.userLikes = { _count: "desc" };
+        orderByValue.likes = { _count: "desc" };
       } else if (sort === "latest") {
         orderByValue.createdAt = "desc";
       } else if (sort === "oldest") {
         orderByValue.createdAt = "asc";
       } else {
-        orderByValue.userLikes = { _count: "desc" };
+        orderByValue.likes = { _count: "desc" };
       }
 
       const posts = await db.post.findMany({
         where: {
           author: {
-            followedBy: {
+            followers: {
               some: {
-                id: req.user?.id,
+                followerId: req.user?.id,
               },
             },
           },
@@ -390,13 +390,13 @@ export const getPosts_GET = [
           },
           _count: {
             select: {
-              userLikes: true,
+              likes: true,
               comments: true,
             },
           },
-          userLikes: {
+          likes: {
             select: {
-              id: true,
+              userId: true,
             },
           },
         },
@@ -416,10 +416,10 @@ export const getPosts_GET = [
             profileImg: post.author.profileImg,
           },
           _count: {
-            userLikes: post._count.userLikes,
+            userLikes: post._count.likes,
             comments: post._count.comments,
           },
-          likedByUser: post.userLikes.some((user) => user.id === req.user?.id),
+          likedByUser: post.likes.some((user) => user.userId === req.user?.id),
           userIsAuthor: req.user?.id === post.author.id,
         };
       });
@@ -681,16 +681,11 @@ export const likePost_POST = [
       });
       return;
     }
-    await db.post.update({
-      where: {
-        id: post.id,
-      },
+
+    await db.postLike.create({
       data: {
-        userLikes: {
-          connect: {
-            id: req.user?.id,
-          },
-        },
+        userId: req.user?.id!,
+        postId: post.id,
       },
     });
 
@@ -730,16 +725,11 @@ export const unlikePost_DELETE = [
       });
       return;
     }
-    await db.post.update({
+
+    await db.postLike.deleteMany({
       where: {
-        id: post.id,
-      },
-      data: {
-        userLikes: {
-          disconnect: {
-            id: req.user?.id,
-          },
-        },
+        userId: req.user?.id!,
+        postId: post.id,
       },
     });
 
@@ -766,6 +756,7 @@ export const getComments_GET = [
       where: {
         id: postId,
       },
+      select: { id: true },
     });
     if (!post) {
       const error = new AppError(404, "NOT_FOUND", "Post Not Found");
@@ -812,12 +803,12 @@ export const getComments_GET = [
         postId: true,
         _count: {
           select: {
-            userLikes: true,
+            likes: true,
           },
         },
-        userLikes: {
+        likes: {
           select: {
-            id: true,
+            userId: true,
           },
         },
       },
@@ -834,10 +825,10 @@ export const getComments_GET = [
         profileImg: comment.author.profileImg,
       },
       _count: {
-        userLikes: comment._count.userLikes,
+        userLikes: comment._count.likes,
       },
-      userLikedComment: comment.userLikes.some(
-        (user) => user.id === req.user?.id,
+      userLikedComment: comment.likes.some(
+        (user) => user.userId === req.user?.id,
       ),
       userIsAuthor: comment.author.id === req.user?.id,
     }));
@@ -1062,18 +1053,13 @@ export const likeComment_POST = [
       return;
     }
 
-    await db.comment.update({
-      where: {
-        id: commentId,
-      },
+    await db.commentLike.create({
       data: {
-        userLikes: {
-          connect: {
-            id: req.user?.id,
-          },
-        },
+        userId: req.user?.id!,
+        commentId: comment.id,
       },
     });
+
     res.json({
       success: true,
       message: "Comment Liked successfully",
@@ -1108,16 +1094,10 @@ export const likeComment_DELETE = [
       return;
     }
 
-    await db.comment.update({
+    await db.commentLike.deleteMany({
       where: {
-        id: commentId,
-      },
-      data: {
-        userLikes: {
-          disconnect: {
-            id: req.user?.id,
-          },
-        },
+        userId: req.user?.id!,
+        commentId: comment.id,
       },
     });
     res.json({

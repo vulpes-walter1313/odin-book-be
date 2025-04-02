@@ -45,12 +45,12 @@ export const profiles_GET = [
         profileImg: true,
         _count: {
           select: {
-            followedBy: true,
+            followers: true,
           },
         },
-        followedBy: {
+        followers: {
           select: {
-            id: true,
+            followerId: true,
           },
         },
       },
@@ -64,9 +64,11 @@ export const profiles_GET = [
         bio: user.bio,
         profileImg: user.profileImg,
         _count: {
-          followedBy: user._count.followedBy,
+          followedBy: user._count.followers,
         },
-        areFollowing: user.followedBy.some((user) => user.id === req.user?.id),
+        areFollowing: user.followers.some(
+          (user) => user.followerId === req.user?.id,
+        ),
       };
     });
 
@@ -100,13 +102,13 @@ export const profile_GET = [
         _count: {
           select: {
             posts: true,
-            followedBy: true,
+            followers: true,
             following: true,
           },
         },
-        followedBy: {
+        followers: {
           select: {
-            id: true,
+            followerId: true,
           },
         },
       },
@@ -131,11 +133,11 @@ export const profile_GET = [
       profileImg: userProfile.profileImg,
       _count: {
         posts: userProfile._count.posts,
-        followedBy: userProfile._count.followedBy,
+        followedBy: userProfile._count.followers,
         following: userProfile._count.following,
       },
-      areFollowing: userProfile.followedBy.some(
-        (user) => user.id === req.user?.id,
+      areFollowing: userProfile.followers.some(
+        (user) => user.followerId === req.user?.id,
       ),
     };
 
@@ -160,6 +162,7 @@ export const profileFollow_POST = [
       },
       select: {
         id: true,
+        username: true,
       },
     });
     if (!user) {
@@ -173,26 +176,16 @@ export const profileFollow_POST = [
       });
       return;
     }
-    const result = await db.user.update({
-      where: {
-        id: user?.id,
-      },
+    await db.userFollows.create({
       data: {
-        followedBy: {
-          connect: {
-            id: req.user?.id,
-          },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
+        followerId: req.user?.id!,
+        followingId: user.id,
       },
     });
     // send response
     res.json({
       success: true,
-      message: `successfully following ${result.name}`,
+      message: `successfully following ${user.username}`,
     });
   }),
 ];
@@ -211,6 +204,7 @@ export const profileUnfollow_DELETE = [
       },
       select: {
         id: true,
+        username: true,
       },
     });
     if (!user) {
@@ -224,25 +218,18 @@ export const profileUnfollow_DELETE = [
       });
       return;
     }
-    const result = await db.user.update({
+
+    await db.userFollows.delete({
       where: {
-        id: user?.id,
-      },
-      data: {
-        followedBy: {
-          disconnect: {
-            id: req.user?.id,
-          },
+        followerId_followingId: {
+          followerId: req.user?.id!,
+          followingId: user.id,
         },
-      },
-      select: {
-        id: true,
-        name: true,
       },
     });
     res.json({
       success: true,
-      message: `Successfully unfollowed ${result.name}`,
+      message: `Successfully unfollowed ${user.username}`,
     });
   }),
 ];
@@ -281,9 +268,9 @@ export const profileFollowing_GET = [
     }
     const totalUsers = await db.user.count({
       where: {
-        followedBy: {
+        followers: {
           some: {
-            id: userSpotlighted.id,
+            followerId: userSpotlighted.id,
           },
         },
       },
@@ -294,9 +281,9 @@ export const profileFollowing_GET = [
 
     const userList = await db.user.findMany({
       where: {
-        followedBy: {
+        followers: {
           some: {
-            id: userSpotlighted.id,
+            followerId: userSpotlighted.id,
           },
         },
       },
@@ -308,19 +295,19 @@ export const profileFollowing_GET = [
         profileImg: true,
         _count: {
           select: {
-            followedBy: true,
+            followers: true,
             following: true,
           },
         },
-        followedBy: {
+        followers: {
           select: {
-            id: true,
+            followerId: true,
           },
         },
       },
       orderBy: [
         {
-          followedBy: {
+          followers: {
             _count: "desc",
           },
         },
@@ -340,11 +327,11 @@ export const profileFollowing_GET = [
       bio: user.bio,
       profileImg: user.profileImg,
       _count: {
-        followedBy: user._count.followedBy,
+        followedBy: user._count.followers,
         following: user._count.following,
       },
-      areFollowing: user.followedBy.some(
-        (followedByUser) => followedByUser.id === req.user?.id,
+      areFollowing: user.followers.some(
+        (followedByUser) => followedByUser.followerId === req.user?.id,
       ),
     }));
 
@@ -392,7 +379,7 @@ export const profileFollowers_GET = [
       where: {
         following: {
           some: {
-            id: userSpotlighted.id,
+            followingId: userSpotlighted.id,
           },
         },
       },
@@ -405,7 +392,7 @@ export const profileFollowers_GET = [
       where: {
         following: {
           some: {
-            id: userSpotlighted.id,
+            followingId: userSpotlighted.id,
           },
         },
       },
@@ -417,19 +404,19 @@ export const profileFollowers_GET = [
         profileImg: true,
         _count: {
           select: {
-            followedBy: true,
+            followers: true,
             following: true,
           },
         },
-        followedBy: {
+        followers: {
           select: {
-            id: true,
+            followerId: true,
           },
         },
       },
       orderBy: [
         {
-          followedBy: {
+          followers: {
             _count: "desc",
           },
         },
@@ -449,11 +436,11 @@ export const profileFollowers_GET = [
       bio: user.bio,
       profileImg: user.profileImg,
       _count: {
-        followedBy: user._count.followedBy,
+        followedBy: user._count.followers,
         following: user._count.following,
       },
-      areFollowing: user.followedBy.some(
-        (followedByUser) => followedByUser.id === req.user?.id,
+      areFollowing: user.followers.some(
+        (followedByUser) => followedByUser.followerId === req.user?.id,
       ),
     }));
 
