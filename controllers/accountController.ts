@@ -274,7 +274,6 @@ export const deleteAccount_DELETE = [
     }
     for (const batch of imgIdBatches) {
       const result = await cloudinary.api.delete_resources(batch);
-      console.log("deleteAccount_DELETE cloudinary batch delete -> ", result);
     }
 
     // delete profile avatar
@@ -282,7 +281,6 @@ export const deleteAccount_DELETE = [
       const result = await cloudinary.uploader.destroy(
         currentUser.profileImgId,
       );
-      console.log("delete profile avatar", result);
     }
 
     const deletedUser = await db.user.delete({
