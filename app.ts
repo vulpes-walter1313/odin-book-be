@@ -119,16 +119,16 @@ async function onError(error: Error & { syscall?: string; code?: string }) {
   switch (error.code) {
     case "EACCES":
       console.error(bind + " requires elevated privileges");
-      // await db.$disconnect();
+      await db.$disconnect();
       process.exit(1);
       break;
     case "EADDRINUSE":
       console.error(bind + " is already in use");
-      // await db.$disconnect();
+      await db.$disconnect();
       process.exit(1);
       break;
     default:
-      // await db.$disconnect();
+      await db.$disconnect();
       throw error;
   }
 }
@@ -141,7 +141,7 @@ function onListening() {
 
 //graceful shutdowns
 process.on("SIGHUP", async () => {
-  // await db.$disconnect();
+  await db.$disconnect();
   server.close((err) => {
     console.log(err);
   });
@@ -149,7 +149,7 @@ process.on("SIGHUP", async () => {
 });
 
 process.on("SIGINT", async () => {
-  // await db.$disconnect();
+  await db.$disconnect();
   server.close((err) => {
     console.log(err);
   });
@@ -157,7 +157,7 @@ process.on("SIGINT", async () => {
 });
 
 process.on("SIGTERM", async () => {
-  // await db.$disconnect();
+  await db.$disconnect();
   server.close((err) => {
     console.log(err);
   });
@@ -165,7 +165,7 @@ process.on("SIGTERM", async () => {
 });
 
 process.on("exit", async () => {
-  // await db.$disconnect();
+  await db.$disconnect();
   server.close((err) => {
     console.log(err);
   });
