@@ -775,7 +775,9 @@ export const getComments_GET = [
         postId: postId,
       },
     });
-    const totalPages = Math.ceil(totalComments / LIMIT);
+    const totalPages = Math.ceil(
+      totalComments === 0 ? 1 : totalComments / LIMIT,
+    );
     if (page > totalPages) page = totalPages;
     const offset = (page - 1) * LIMIT;
 
