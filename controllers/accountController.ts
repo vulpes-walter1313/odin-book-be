@@ -211,3 +211,94 @@ export const updateUsername_PUT = [
     res.json({ message: "Username successfully updated" });
   }),
 ];
+
+export const deleteAccount_DELETE = [
+  passport.authenticate("jwt", { session: false }),
+  body("password").notEmpty(),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const password = String(data.password);
+    const currentUser = await db.user.findUnique({
+      where: {
+        id: req.user?.id,
+      },
+      select: {
+        id: true,
+        username: true,
+        password: true,
+        profileImgId: true,
+      },
+    });
+    if (!currentUser) {
+      throw new AppError(404, "NOT_FOUND", "User not found");
+    }
+
+    const isValidPassword = await bcrypt.compare(
+      password,
+      currentUser.password,
+    );
+    if (!isValidPassword) {
+      throw new AppError(403, "FORBIDDEN", "Password is not valid");
+    }
+
+    const allPosts = await db.post.findMany({
+      where: {
+        authorId: currentUser.id,
+      },
+      select: {
+        id: true,
+        imageId: true,
+      },
+    });
+
+    // delete post images
+    const imgIds: string[] = [];
+    allPosts.forEach((post) => {
+      if (post.imageId) {
+        imgIds.push(post.imageId);
+      }
+    });
+    const imgIdBatches: string[][] = [];
+    const loopTimes = Math.ceil(imgIds.length / 100);
+    for (let i = 0; i < loopTimes; i++) {
+      const imgIdBatch: string[] = [];
+      let round = 1;
+      while (round <= 100) {
+        round++;
+        const imgId = imgIds.pop();
+        if (!imgId) break;
+        imgIdBatch.push(imgId);
+      }
+      imgIdBatches.push(imgIdBatch);
+    }
+    for (const batch of imgIdBatches) {
+      const result = await cloudinary.api.delete_resources(batch);
+      console.log("deleteAccount_DELETE cloudinary batch delete -> ", result);
+    }
+
+    // delete profile avatar
+    if (currentUser.profileImgId) {
+      const result = await cloudinary.uploader.destroy(
+        currentUser.profileImgId,
+      );
+      console.log("delete profile avatar", result);
+    }
+
+    const deletedUser = await db.user.delete({
+      where: {
+        id: req.user?.id,
+      },
+      select: {
+        id: true,
+        username: true,
+      },
+    });
+
+    res.json({
+      message: "Account successfully deleted",
+      username: deletedUser.username,
+      id: deletedUser.id,
+    });
+  }),
+];
