@@ -334,13 +334,20 @@ export const getPosts_GET = [
     if (feed === "personal") {
       const totalPosts = await db.post.count({
         where: {
-          author: {
-            followers: {
-              some: {
-                followerId: req.user?.id,
+          OR: [
+            {
+              author: {
+                followers: {
+                  some: {
+                    followerId: req.user?.id,
+                  },
+                },
               },
             },
-          },
+            {
+              authorId: req.user?.id,
+            },
+          ],
         },
       });
       const totalPages = Math.ceil(totalPosts === 0 ? 1 : totalPosts / LIMIT);
@@ -364,13 +371,20 @@ export const getPosts_GET = [
 
       const posts = await db.post.findMany({
         where: {
-          author: {
-            followers: {
-              some: {
-                followerId: req.user?.id,
+          OR: [
+            {
+              author: {
+                followers: {
+                  some: {
+                    followerId: req.user?.id,
+                  },
+                },
               },
             },
-          },
+            {
+              authorId: req.user?.id,
+            },
+          ],
         },
         skip: offset,
         take: LIMIT,
