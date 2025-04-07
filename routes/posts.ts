@@ -5,6 +5,7 @@ const router = express.Router();
 // All these routes are prefixed by /posts
 router.get("/", postsController.getPosts_GET);
 router.post("/", postsController.createPost_POST);
+router.get("/:postId", postsController.getPost_GET);
 router.put("/:postId", postsController.editPost_PUT);
 router.delete("/:postId", postsController.deletePost_DELETE);
 router.post("/:postId/likes", postsController.likePost_POST);

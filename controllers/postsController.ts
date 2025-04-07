@@ -504,21 +504,57 @@ export const getPost_GET = [
         id: true,
         caption: true,
         imageUrl: true,
+        createdAt: true,
+        updatedAt: true,
         author: {
           select: {
             id: true,
             name: true,
             username: true,
+            profileImg: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
           },
         },
       },
     });
+
     if (!post) {
       throw new AppError(404, "NOT_FOUND", "Post not found");
     }
+    const userLikesPost = await db.postLike.findUnique({
+      where: {
+        userId_postId: {
+          postId: post.id,
+          userId: req.user?.id!,
+        },
+      },
+    });
 
     res.json({
-      post: post,
+      post: {
+        id: post.id,
+        caption: post.caption,
+        imageUrl: post.imageUrl,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        author: {
+          id: post.author.id,
+          name: post.author.name,
+          username: post.author.username,
+          profileImg: post.author.profileImg,
+        },
+        _count: {
+          userLikes: post._count.likes,
+          comments: post._count.comments,
+        },
+        likedByUser: userLikesPost ? true : false,
+        userIsAuthor: post.author.id === req.user?.id,
+      },
     });
   }),
 ];
@@ -673,7 +709,6 @@ export const likePost_POST = [
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const data = matchedData(req);
     const postId = parseInt(data.postId);
-    console.log({ data, postId });
 
     const post = await db.post.findUnique({
       where: {
@@ -696,12 +731,22 @@ export const likePost_POST = [
       return;
     }
 
-    await db.postLike.create({
-      data: {
-        userId: req.user?.id!,
-        postId: post.id,
+    const likeExist = await db.postLike.findUnique({
+      where: {
+        userId_postId: {
+          userId: req.user?.id!,
+          postId: postId,
+        },
       },
     });
+    if (!likeExist) {
+      await db.postLike.create({
+        data: {
+          userId: req.user?.id!,
+          postId: postId,
+        },
+      });
+    }
 
     res.json({
       success: true,
