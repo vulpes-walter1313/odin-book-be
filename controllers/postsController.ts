@@ -710,6 +710,12 @@ export const deletePost_DELETE = [
         });
         res.json({ success: true, message: "Post deleted successfuly" });
         return;
+      } else {
+        throw new AppError(
+          500,
+          "INTERNAL_SERVER_ERROR",
+          "Failure deleting image from post",
+        );
       }
     }
 
