@@ -98,6 +98,8 @@ export const getPosts_GET = [
           imageUrl: true,
           createdAt: true,
           updatedAt: true,
+          imageWidth: true,
+          imageHeight: true,
           author: {
             select: {
               id: true,
@@ -132,6 +134,8 @@ export const getPosts_GET = [
           imageUrl: post.imageUrl,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
+          imageWidth: post.imageWidth,
+          imageHeight: post.imageHeight,
           author: {
             id: post.author.id,
             name: post.author.name,
@@ -196,6 +200,8 @@ export const getPosts_GET = [
           imageUrl: true,
           createdAt: true,
           updatedAt: true,
+          imageWidth: true,
+          imageHeight: true,
           author: {
             select: {
               id: true,
@@ -234,6 +240,8 @@ export const getPosts_GET = [
           },
           caption: post.caption,
           imageUrl: post.imageUrl,
+          imageWidth: post.imageWidth,
+          imageHeight: post.imageHeight,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
           likedByUser: post.likes.some((user) => user.userId === req.user?.id),
@@ -278,6 +286,8 @@ export const getPosts_GET = [
           imageUrl: true,
           createdAt: true,
           updatedAt: true,
+          imageWidth: true,
+          imageHeight: true,
           author: {
             select: {
               id: true,
@@ -306,6 +316,8 @@ export const getPosts_GET = [
           id: post.id,
           caption: post.caption,
           imageUrl: post.imageUrl,
+          imageWidth: post.imageWidth,
+          imageHeight: post.imageHeight,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
           author: {
@@ -392,6 +404,8 @@ export const getPosts_GET = [
           id: true,
           caption: true,
           imageUrl: true,
+          imageWidth: true,
+          imageHeight: true,
           createdAt: true,
           updatedAt: true,
           author: {
@@ -421,6 +435,8 @@ export const getPosts_GET = [
           id: post.id,
           caption: post.caption,
           imageUrl: post.imageUrl,
+          imageWidth: post.imageWidth,
+          imageHeight: post.imageHeight,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
           author: {
@@ -474,6 +490,8 @@ export const createPost_POST = [
         caption: data.caption,
         imageUrl: uploadResult.secure_url,
         imageId: uploadResult.public_id,
+        imageWidth: uploadResult.width,
+        imageHeight: uploadResult.height,
       },
     });
 
@@ -504,6 +522,8 @@ export const getPost_GET = [
         id: true,
         caption: true,
         imageUrl: true,
+        imageWidth: true,
+        imageHeight: true,
         createdAt: true,
         updatedAt: true,
         author: {
@@ -540,6 +560,8 @@ export const getPost_GET = [
         id: post.id,
         caption: post.caption,
         imageUrl: post.imageUrl,
+        imageWidth: post.imageWidth,
+        imageHeight: post.imageHeight,
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
         author: {
@@ -618,6 +640,8 @@ export const editPost_PUT = [
       data: {
         imageUrl: uploadResult.secure_url,
         imageId: uploadResult.public_id,
+        imageWidth: uploadResult.width,
+        imageHeight: uploadResult.height,
         caption: caption,
       },
     });
