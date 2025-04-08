@@ -40,12 +40,14 @@ model User {
 }
 
 model Post {
-  id        Int      @id @default(autoincrement()) @map("id")
-  caption   String   @map("caption") @db.VarChar(2048)
-  imageUrl  String?  @map("image_url")
-  imageId   String?  @map("image_id")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          Int      @id @default(autoincrement()) @map("id")
+  caption     String   @map("caption") @db.VarChar(2048)
+  imageUrl    String?  @map("image_url")
+  imageId     String?  @map("image_id")
+  imageWidth  Int      @map("image_width")
+  imageHeight Int      @map("image_height")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId String @map("author_id")
