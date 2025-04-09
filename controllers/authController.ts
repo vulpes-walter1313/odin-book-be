@@ -315,6 +315,7 @@ export const check_GET = [
       name: req.user?.name,
       // @ts-ignore
       profileImg: req.user?.profileImg,
+      isAdmin: req.user?.role && req.user.role === "ADMIN" ? true : false,
     });
   },
 ];
