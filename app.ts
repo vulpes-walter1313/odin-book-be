@@ -16,6 +16,8 @@ import morgan from "morgan";
 import db from "@/db/db";
 import cors from "cors";
 import { AppError } from "./lib/errors";
+import multer from "multer";
+import { status } from "http-status";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3000");
@@ -82,6 +84,7 @@ app.use(
     next: NextFunction,
   ) => {
     if (err instanceof AppError) {
+      console.log("error handler", err);
       res.status(err.status).json({
         success: false,
         error: {
@@ -92,6 +95,30 @@ app.use(
       });
       return;
     }
+
+    if (err instanceof multer.MulterError) {
+      console.log("error handler", err);
+      let statusCode: number;
+      switch (err.code) {
+        case "LIMIT_FILE_SIZE":
+          statusCode = status.REQUEST_ENTITY_TOO_LARGE;
+          break;
+        case "LIMIT_UNEXPECTED_FILE":
+          statusCode = status.UNSUPPORTED_MEDIA_TYPE;
+          break;
+        default:
+          statusCode = 500;
+      }
+      res.status(statusCode).json({
+        success: false,
+        error: {
+          code: err.code,
+          message: err.message,
+        },
+      });
+      return;
+    }
+
     console.log("error handler", err);
     res.status(err.status || 500).json({
       success: false,

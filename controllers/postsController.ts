@@ -8,6 +8,7 @@ import { AppError } from "@/lib/errors";
 import { upload } from "@/middleware/multer";
 import cloudinary from "@/lib/cloudinaryUploader";
 import fs from "node:fs/promises";
+import { status } from "http-status";
 
 // GET /posts
 export const getPosts_GET = [
@@ -476,32 +477,62 @@ export const createPost_POST = [
     // upload image and get public url back
 
     if (!req.file) {
-      throw new AppError(400, "VALIDATION_ERROR", "File is not attached");
+      throw new AppError(
+        status.UNSUPPORTED_MEDIA_TYPE,
+        "VALIDATION_ERROR",
+        status[status.UNSUPPORTED_MEDIA_TYPE],
+      );
     }
-    const uploadResult = await cloudinary.uploader.upload(req.file?.path, {
-      use_filename: true,
-      asset_folder: "odin-book",
-    });
+    let uploadResult;
+    try {
+      uploadResult = await cloudinary.uploader.upload(req.file?.path, {
+        use_filename: true,
+        asset_folder: "odin-book",
+      });
+    } catch (err) {
+      await fs.rm(req.file.path);
+      throw new AppError(
+        500,
+        "INTERNAL_SERVER_ERROR",
+        "Error uploading to file storage",
+      );
+    }
 
-    // save post to db
-    const newPost = await db.post.create({
-      data: {
-        authorId: req.user?.id!,
-        caption: data.caption,
-        imageUrl: uploadResult.secure_url,
-        imageId: uploadResult.public_id,
-        imageWidth: uploadResult.width,
-        imageHeight: uploadResult.height,
-      },
-    });
+    try {
+      // save post to db
+      await db.post.create({
+        data: {
+          authorId: req.user?.id!,
+          caption: data.caption,
+          imageUrl: uploadResult.secure_url,
+          imageId: uploadResult.public_id,
+          imageWidth: uploadResult.width,
+          imageHeight: uploadResult.height,
+        },
+      });
 
-    // if successful, delete image from local system
-    await fs.rm(req.file.path);
+      // if successful, delete image from local system
+      await fs.rm(req.file.path);
 
-    // return success message
-    res.json({
-      message: "post created successfully",
-    });
+      // return success message
+      res.json({
+        message: "post created successfully",
+      });
+      return;
+    } catch (err) {
+      console.log(err);
+      console.log(
+        "Must delete this file from cloudinary: ",
+        uploadResult.public_id,
+      );
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error saving post.",
+        },
+      });
+    }
   }),
 ];
 
