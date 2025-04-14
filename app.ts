@@ -11,6 +11,7 @@ import authRouter from "./routes/auth";
 import profilesRouter from "./routes/profiles";
 import postRouter from "./routes/posts";
 import accountRouter from "./routes/account";
+import adminRouter from "./routes/admin";
 
 import morgan from "morgan";
 import db from "@/db/db";
@@ -69,6 +70,7 @@ app.use("/auth", authRouter);
 app.use("/profiles", profilesRouter);
 app.use("/posts", postRouter);
 app.use("/account", accountRouter);
+app.use("/admin", adminRouter);
 
 // catch all 404 and forward to Error Handler
 app.use((req: Request, res: Response, next: NextFunction) => {
