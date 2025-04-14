@@ -176,12 +176,23 @@ export const profileFollow_POST = [
       });
       return;
     }
-    await db.userFollows.create({
-      data: {
-        followerId: req.user?.id!,
-        followingId: user.id,
+    const userAlreadyFollows = await db.userFollows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: req.user?.id!,
+          followingId: user.id,
+        },
       },
     });
+    if (!userAlreadyFollows) {
+      await db.userFollows.create({
+        data: {
+          followerId: req.user?.id!,
+          followingId: user.id,
+        },
+      });
+    }
+
     // send response
     res.json({
       success: true,
@@ -219,12 +230,10 @@ export const profileUnfollow_DELETE = [
       return;
     }
 
-    await db.userFollows.delete({
+    await db.userFollows.deleteMany({
       where: {
-        followerId_followingId: {
-          followerId: req.user?.id!,
-          followingId: user.id,
-        },
+        followerId: req.user?.id!,
+        followingId: user.id,
       },
     });
     res.json({
