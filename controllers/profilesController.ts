@@ -97,6 +97,7 @@ export const profile_GET = [
         id: true,
         name: true,
         username: true,
+        bannedUntil: true,
         bio: true,
         profileImg: true,
         _count: {
@@ -115,20 +116,13 @@ export const profile_GET = [
     });
 
     if (!userProfile) {
-      const error = new AppError(404, "NOT_FOUND", "User not found");
-      res.status(error.status).json({
-        success: false,
-        error: {
-          code: error.code,
-          message: error.message,
-        },
-      });
-      return;
+      throw new AppError(404, "NOT_FOUND", "User not found");
     }
     const finalProfile = {
       id: userProfile.id,
       name: userProfile.name,
       username: userProfile.username,
+      bannedUntil: userProfile.bannedUntil,
       bio: userProfile.bio,
       profileImg: userProfile.profileImg,
       _count: {
