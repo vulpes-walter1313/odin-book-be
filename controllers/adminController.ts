@@ -4,7 +4,7 @@ import asyncHandler from "express-async-handler";
 import { AppError } from "@/lib/errors";
 import { status } from "http-status";
 import db from "@/db/db";
-import { matchedData, param } from "express-validator";
+import { body, matchedData, param } from "express-validator";
 import { validateErrors } from "@/middleware/validation";
 import { createIdBatchesForDeletion } from "@/lib/utils";
 import cloudinary from "@/lib/cloudinaryUploader";
@@ -108,6 +108,73 @@ export const deleteUser_DELETE = [
       message: "User successfully deleted",
       username: deletedUser.username,
       userId: deletedUser.id,
+    });
+  }),
+];
+
+// POST /admin/users/ban
+export const banUser_POST = [
+  passport.authenticate("jwt", { session: false }),
+  body("username").isLength({ max: 32 }),
+  body("banUntil").isISO8601(),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    const authUser = await db.user.findUnique({
+      where: {
+        id: req.user?.id,
+      },
+      select: {
+        id: true,
+        username: true,
+        role: true,
+      },
+    });
+    if (!authUser) {
+      throw new AppError(
+        status.FORBIDDEN,
+        "FORBIDDEN",
+        "Authed user not found",
+      );
+    }
+    if (authUser.role !== "ADMIN") {
+      throw new AppError(
+        status.FORBIDDEN,
+        "FORBIDDEN",
+        "You don't have the privilages to perform this action",
+      );
+    }
+    const userToBan = await db.user.findUnique({
+      where: {
+        username: data.username,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!userToBan) {
+      throw new AppError(status.NOT_FOUND, "NOT_FOUND", "User not found");
+    }
+
+    const banDate = new Date(data.banUntil);
+    const bannedUser = await db.user.update({
+      where: {
+        id: userToBan.id,
+      },
+      data: {
+        bannedUntil: banDate,
+      },
+      select: {
+        id: true,
+        username: true,
+        bannedUntil: true,
+      },
+    });
+
+    res.json({
+      message: "Ban user to be implemented",
+      username: bannedUser.username,
+      bannedUntil: bannedUser.bannedUntil,
     });
   }),
 ];
