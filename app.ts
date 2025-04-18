@@ -19,6 +19,8 @@ import cors from "cors";
 import { AppError } from "./lib/errors";
 import multer from "multer";
 import { status } from "http-status";
+import cron from "node-cron";
+import { clearOldUserBans } from "./lib/utils";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3000");
@@ -168,35 +170,47 @@ function onListening() {
   console.log("Listening on " + bind);
 }
 
+const unbanTask = cron.schedule("0 * * * *", () => {
+  clearOldUserBans().then(() => {
+    console.log("Unban cron job complete");
+  });
+});
+
+unbanTask.start();
+
 //graceful shutdowns
 process.on("SIGHUP", async () => {
-  await db.$disconnect();
+  unbanTask.stop();
   server.close((err) => {
     console.log(err);
   });
+  await db.$disconnect();
   process.exit(1);
 });
 
 process.on("SIGINT", async () => {
-  await db.$disconnect();
+  unbanTask.stop();
   server.close((err) => {
     console.log(err);
   });
+  await db.$disconnect();
   process.exit(1);
 });
 
 process.on("SIGTERM", async () => {
-  await db.$disconnect();
+  unbanTask.stop();
   server.close((err) => {
     console.log(err);
   });
+  await db.$disconnect();
   process.exit(1);
 });
 
 process.on("exit", async () => {
-  await db.$disconnect();
+  unbanTask.stop();
   server.close((err) => {
     console.log(err);
   });
+  await db.$disconnect();
   process.exit(0);
 });

@@ -1,3 +1,5 @@
+import db from "@/db/db";
+
 export function createIdBatchesForDeletion(
   idList: string[],
   numInBatch: number,
@@ -16,4 +18,23 @@ export function createIdBatchesForDeletion(
     imgIdBatches.push(imgIdBatch);
   }
   return imgIdBatches;
+}
+
+export async function clearOldUserBans() {
+  const now = new Date();
+  try {
+    const updatedUsersResult = await db.user.updateMany({
+      where: {
+        bannedUntil: {
+          lte: now,
+        },
+      },
+      data: {
+        bannedUntil: null,
+      },
+    });
+    console.log(`Unbanned ${updatedUsersResult.count} users.`);
+  } catch (err) {
+    console.error("Error unbanning users", err);
+  }
 }
