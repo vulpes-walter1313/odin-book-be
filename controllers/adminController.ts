@@ -178,3 +178,52 @@ export const banUser_POST = [
     });
   }),
 ];
+
+export const unbanUser_DELETE = [
+  passport.authenticate("jwt", { session: false }),
+  body("username").isLength({ max: 32 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const data = matchedData(req);
+    console.log("unbanUser_DELETE", data);
+
+    if (req.user?.role !== "ADMIN") {
+      throw new AppError(
+        status.FORBIDDEN,
+        "FORBIDDEN",
+        "You don't have the permissions to perform this action",
+      );
+    }
+
+    const userToUnban = await db.user.findUnique({
+      where: {
+        username: data.username,
+      },
+      select: {
+        id: true,
+        username: true,
+      },
+    });
+
+    if (!userToUnban) {
+      throw new AppError(
+        status.NOT_FOUND,
+        "NOT_FOUND",
+        "User you want to unban doesn't exist",
+      );
+    }
+
+    await db.user.update({
+      where: {
+        id: userToUnban.id,
+      },
+      data: {
+        bannedUntil: null,
+      },
+    });
+    res.json({
+      message: "User unbanned successfully",
+      username: userToUnban.username,
+    });
+  }),
+];
