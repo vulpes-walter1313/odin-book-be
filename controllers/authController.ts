@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { AppError } from "@/lib/errors";
 import passport from "passport";
+import status from "http-status";
 
 // POST /auth/signup
 export const signup_POST = [
@@ -47,16 +48,42 @@ export const signup_POST = [
     // At this point, we know there are no validation errors.
 
     const { name, username, email, password } = matchedData(req);
-    // TODO: register new user
+
+    const account = await db.account.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider: "CREDENTIALS",
+          providerAccountId: email,
+        },
+      },
+    });
+    if (account) {
+      throw new AppError(
+        status.CONFLICT,
+        status[status.CONFLICT],
+        "Account already exists",
+      );
+    }
 
     const hash = await bcrypt.hash(password, 10);
-    const newUser = await db.user.create({
-      data: {
-        name,
-        username,
-        email,
-        password: hash,
-      },
+    const [newUser, newAccount] = await db.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          username,
+          email,
+          password: hash,
+        },
+      });
+
+      const newAccount = await tx.account.create({
+        data: {
+          userId: newUser.id,
+          provider: "CREDENTIALS",
+          providerAccountId: newUser.email!,
+        },
+      });
+      return [newUser, newAccount];
     });
 
     jwt.sign(
