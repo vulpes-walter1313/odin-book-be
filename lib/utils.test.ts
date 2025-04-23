@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@jest/globals";
-import { createIdBatchesForDeletion } from "./utils";
+import { createIdBatchesForDeletion, generateRandomUsername } from "./utils";
 import { faker } from "@faker-js/faker";
 
 describe("create batches of ids", () => {
@@ -46,5 +46,13 @@ describe("create batches of ids", () => {
     }
     const batches = createIdBatchesForDeletion(idList, 100);
     expect(batches[batches.length - 1].length).toBe(1);
+  });
+});
+
+describe("generate random usernames", () => {
+  test("username is 17 characters", () => {
+    const username = generateRandomUsername();
+    console.log("username: ", username);
+    expect(username.length).toBe(17);
   });
 });

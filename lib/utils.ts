@@ -1,4 +1,4 @@
-import db from "@/db/db";
+import { init } from "@paralleldrive/cuid2";
 
 export function createIdBatchesForDeletion(
   idList: string[],
@@ -20,21 +20,9 @@ export function createIdBatchesForDeletion(
   return imgIdBatches;
 }
 
-export async function clearOldUserBans() {
-  const now = new Date();
-  try {
-    const updatedUsersResult = await db.user.updateMany({
-      where: {
-        bannedUntil: {
-          lte: now,
-        },
-      },
-      data: {
-        bannedUntil: null,
-      },
-    });
-    console.log(`Unbanned ${updatedUsersResult.count} users.`);
-  } catch (err) {
-    console.error("Error unbanning users", err);
-  }
+export function generateRandomUsername() {
+  const createId = init({
+    length: 12,
+  });
+  return `momo_${createId()}`;
 }
