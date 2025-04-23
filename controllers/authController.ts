@@ -105,6 +105,14 @@ export const signin_POST = [
       where: {
         email: email,
       },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        bannedUntil: true,
+        password: true,
+        email: true,
+      },
     });
     if (!user) {
       const error = new AppError(
@@ -121,7 +129,7 @@ export const signin_POST = [
       });
       return;
     }
-    const passwordsMatch = await bcrypt.compare(password, user.password);
+    const passwordsMatch = await bcrypt.compare(password, user.password!);
     if (!passwordsMatch) {
       const error = new AppError(
         401,
