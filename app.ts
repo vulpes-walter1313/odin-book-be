@@ -7,6 +7,7 @@ import { createServer } from "http";
 import HttpError from "./lib/httpError";
 import passport from "passport";
 import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import authRouter from "./routes/auth";
 import profilesRouter from "./routes/profiles";
 import postRouter from "./routes/posts";
@@ -20,7 +21,8 @@ import { AppError } from "./lib/errors";
 import multer from "multer";
 import { status } from "http-status";
 import cron from "node-cron";
-import { clearOldUserBans } from "./lib/utils";
+import { clearOldUserBans } from "./lib/cronJobs";
+import { generateRandomUsername } from "./lib/utils";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3000");
@@ -63,6 +65,90 @@ passport.use(
         return done(null, user);
       } catch (err) {
         return done(err, false);
+      }
+    },
+  ),
+);
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL!,
+    },
+    async function GoogleVerify(accessToken, refreshToken, profile, done) {
+      try {
+        const existingAccount = await db.account.findUnique({
+          where: {
+            provider_providerAccountId: {
+              provider: "GOOGLE",
+              providerAccountId: profile.id,
+            },
+          },
+        });
+        if (existingAccount) {
+          await db.account.update({
+            where: {
+              id: existingAccount.id,
+            },
+            data: {
+              accessToken: accessToken ?? "",
+              refreshToken: refreshToken ?? "",
+            },
+          });
+          const user = await db.user.findUnique({
+            where: {
+              id: existingAccount.userId,
+            },
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              role: true,
+              profileImg: true,
+              bannedUntil: true,
+              email: true,
+            },
+          });
+          if (!user) {
+            const err = new Error("Account doesn't have user linked");
+            return done(err);
+          } else {
+            return done(null, user);
+          }
+        } else {
+          // account doesn't exist
+          const [newUser, newAccount] = await db.$transaction(async (tx) => {
+            const newUser = await tx.user.create({
+              data: {
+                name: profile.displayName,
+                username: generateRandomUsername(),
+              },
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                role: true,
+                profileImg: true,
+                bannedUntil: true,
+                email: true,
+              },
+            });
+
+            const newAccount = await tx.account.create({
+              data: {
+                userId: newUser.id,
+                provider: "GOOGLE",
+                providerAccountId: profile.id,
+              },
+            });
+            return [newUser, newAccount];
+          });
+          return done(null, newUser);
+        }
+      } catch (err) {
+        return done(err);
       }
     },
   ),

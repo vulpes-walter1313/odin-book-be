@@ -6,7 +6,7 @@ declare global {
       id: string;
       name: string;
       username: string;
-      email: string;
+      email: string | null;
       profileImg: string | null;
       bannedUntil: Date | null;
       role: "ADMIN" | "USER";

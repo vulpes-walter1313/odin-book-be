@@ -354,3 +354,47 @@ export const check_GET = [
     });
   },
 ];
+
+// GET /auth/google
+export const googleLogin_GET = [
+  passport.authenticate("google", { session: false, scope: ["profile"] }),
+];
+
+// GET /auth/google/callback
+export const googleLoginCallback_GET = [
+  passport.authenticate("google", { session: false }),
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    jwt.sign(
+      { sub: req.user?.id, username: req.user?.username, name: req.user?.name },
+      process.env.JWT_SECRET!,
+      {
+        algorithm: "HS256",
+        expiresIn: "1d",
+      },
+      (err, accessToken) => {
+        if (err) {
+          next(err);
+          return;
+        }
+        jwt.sign(
+          { sub: req.user?.id },
+          process.env.JWT_SECRET!,
+          {
+            algorithm: "HS256",
+            expiresIn: "7d",
+          },
+          (err, refreshToken) => {
+            if (err) {
+              next(err);
+              return;
+            }
+            res.redirect(
+              `${process.env.FE_URL}/oauth-success?accessToken=${accessToken}&refreshToken=${refreshToken}`,
+            );
+            return;
+          },
+        );
+      },
+    );
+  }),
+];
