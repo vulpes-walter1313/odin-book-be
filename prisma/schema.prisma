@@ -16,8 +16,8 @@ datasource db {
 
 model User {
   id           String    @id @default(cuid()) @map("id")
-  email        String    @unique @map("email")
-  password     String    @map("password")
+  email        String?   @unique @map("email")
+  password     String?   @map("password")
   username     String    @unique @map("username") @db.VarChar(32)
   name         String    @map("name") @db.VarChar(48)
   bio          String?   @map("bio") @db.VarChar(512)
@@ -26,6 +26,8 @@ model User {
   role         Role      @default(USER) @map("role")
   lastLogin    DateTime? @map("last_login") @db.Timestamptz()
   bannedUntil  DateTime? @map("banned_until") @db.Timestamptz
+
+  account Account[]
 
   posts    Post[]
   comments Comment[]
@@ -37,6 +39,19 @@ model User {
   commentLikes CommentLike[]
 
   @@map("users")
+}
+
+model Account {
+  id                String      @id @default(cuid()) @map("id")
+  provider          AccountType @map("provider")
+  providerAccountId String      @map("provider_account_id")
+  userId            String      @map("user_id")
+  user              User        @relation(fields: [userId], references: [id])
+  accessToken       String?     @map("access_token")
+  refreshToken      String?     @map("refresh_token")
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model Post {
@@ -111,4 +126,9 @@ model CommentLike {
 enum Role {
   USER
   ADMIN
+}
+
+enum AccountType {
+  GOOGLE
+  CREDENTIALS
 }
