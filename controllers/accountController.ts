@@ -10,6 +10,8 @@ import cloudinary from "@/lib/cloudinaryUploader";
 import fs from "node:fs/promises";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import status from "http-status";
+import { createIdBatchesForDeletion } from "@/lib/utils";
 
 // GET /account/user
 export const account_GET = [
@@ -25,14 +27,29 @@ export const account_GET = [
         username: true,
         bio: true,
         profileImg: true,
+        account: {
+          select: {
+            provider: true,
+          },
+        },
       },
     });
 
     if (!user) {
       throw new AppError(404, "NOT_FOUND", "User Not found");
     }
+    const hasCredentialsAccount = user.account.some(
+      (account) => account.provider === "CREDENTIALS",
+    );
     res.json({
-      user: user,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        bio: user.bio,
+        profileImg: user.profileImg,
+      },
+      hasCredentialsAccount: hasCredentialsAccount,
     });
   }),
 ];
@@ -131,20 +148,44 @@ export const updatePassword_PUT = [
       select: {
         id: true,
         password: true,
+        account: {
+          select: {
+            provider: true,
+          },
+        },
       },
     });
+
     if (!currentUser) {
       throw new AppError(404, "NOT_FOUND", "User not found");
     }
 
+    if (currentUser.account.length === 0) {
+      throw new AppError(
+        status.CONFLICT,
+        status[status.CONFLICT],
+        "No account has been found for this user",
+      );
+    }
+
+    const hasCredentialsAccount = currentUser.account.some(
+      (account) => account.provider === "CREDENTIALS",
+    );
+    if (!hasCredentialsAccount) {
+      throw new AppError(
+        status.CONFLICT,
+        status[status.CONFLICT],
+        "User doesn't use passwords",
+      );
+    }
+
     const passwordValid = await bcrypt.compare(
       oldPassword,
-      currentUser.password,
+      currentUser.password!,
     );
 
     if (!passwordValid) {
       throw new AppError(403, "FORBIDDEN", "Password is not valid");
-      return;
     }
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
 
@@ -214,11 +255,13 @@ export const updateUsername_PUT = [
 
 export const deleteAccount_DELETE = [
   passport.authenticate("jwt", { session: false }),
-  body("password").notEmpty(),
+  body("confirm")
+    .custom((val) => {
+      return val === "delete my account";
+    })
+    .withMessage("Confirmation phrase not valid"),
   validateErrors,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const data = matchedData(req);
-    const password = String(data.password);
     const currentUser = await db.user.findUnique({
       where: {
         id: req.user?.id,
@@ -232,14 +275,6 @@ export const deleteAccount_DELETE = [
     });
     if (!currentUser) {
       throw new AppError(404, "NOT_FOUND", "User not found");
-    }
-
-    const isValidPassword = await bcrypt.compare(
-      password,
-      currentUser.password,
-    );
-    if (!isValidPassword) {
-      throw new AppError(403, "FORBIDDEN", "Password is not valid");
     }
 
     const allPosts = await db.post.findMany({
@@ -259,19 +294,7 @@ export const deleteAccount_DELETE = [
         imgIds.push(post.imageId);
       }
     });
-    const imgIdBatches: string[][] = [];
-    const loopTimes = Math.ceil(imgIds.length / 100);
-    for (let i = 0; i < loopTimes; i++) {
-      const imgIdBatch: string[] = [];
-      let round = 1;
-      while (round <= 100) {
-        round++;
-        const imgId = imgIds.pop();
-        if (!imgId) break;
-        imgIdBatch.push(imgId);
-      }
-      imgIdBatches.push(imgIdBatch);
-    }
+    const imgIdBatches = createIdBatchesForDeletion(imgIds, 100);
     for (const batch of imgIdBatches) {
       const result = await cloudinary.api.delete_resources(batch);
     }
