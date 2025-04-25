@@ -46,7 +46,7 @@ model Account {
   provider          AccountType @map("provider")
   providerAccountId String      @map("provider_account_id")
   userId            String      @map("user_id")
-  user              User        @relation(fields: [userId], references: [id])
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   accessToken       String?     @map("access_token")
   refreshToken      String?     @map("refresh_token")
 
