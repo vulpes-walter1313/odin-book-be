@@ -40,7 +40,7 @@ export const getPosts_GET = [
     let page: number = parseInt(data.page);
     const feed = String(data.feed);
     const sort = String(data.sort);
-    const LIMIT = 25;
+    const LIMIT = 15;
     const { username } = data;
     // handle logic for user posts
     if (feed === "user") {
@@ -147,7 +147,6 @@ export const getPosts_GET = [
         };
       });
       res.json({
-        success: true,
         posts: finalPost,
         currentPage: page,
         totalPages: totalPages,
@@ -249,7 +248,6 @@ export const getPosts_GET = [
         };
       });
       res.json({
-        success: true,
         posts: finalPosts,
         currentPage: page,
         totalPages: totalPages,
@@ -336,7 +334,6 @@ export const getPosts_GET = [
         };
       });
       res.json({
-        success: true,
         posts: finalPosts,
         currentPage: page,
         totalPages: totalPages,
@@ -455,7 +452,6 @@ export const getPosts_GET = [
         };
       });
       res.json({
-        success: true,
         posts: finalPosts,
         currentPage: page,
         totalPages: totalPages,
@@ -480,7 +476,7 @@ export const createPost_POST = [
       throw new AppError(
         status.UNSUPPORTED_MEDIA_TYPE,
         "VALIDATION_ERROR",
-        status[status.UNSUPPORTED_MEDIA_TYPE],
+        status[status.UNSUPPORTED_MEDIA_TYPE]
       );
     }
     let uploadResult;
@@ -494,7 +490,7 @@ export const createPost_POST = [
       throw new AppError(
         500,
         "INTERNAL_SERVER_ERROR",
-        "Error uploading to file storage",
+        "Error uploading to file storage"
       );
     }
 
@@ -523,7 +519,7 @@ export const createPost_POST = [
       console.log(err);
       console.log(
         "Must delete this file from cloudinary: ",
-        uploadResult.public_id,
+        uploadResult.public_id
       );
       res.status(500).json({
         success: false,
@@ -638,7 +634,7 @@ export const editPost_PUT = [
       throw new AppError(
         500,
         "INTERNAL_SERVER_ERROR",
-        "file to upload not found",
+        "file to upload not found"
       );
     }
 
@@ -651,7 +647,7 @@ export const editPost_PUT = [
     // TODO: delete original image in cloudinary
     if (originalPost?.imageId) {
       const deleteImageRes = await cloudinary.uploader.destroy(
-        originalPost?.imageId,
+        originalPost?.imageId
       );
       if (deleteImageRes.result === "ok") {
         console.log("old picture deleted");
@@ -659,7 +655,7 @@ export const editPost_PUT = [
         throw new AppError(
           500,
           "INTERNAL_SERVER_ERROR",
-          "Could not delete old image",
+          "Could not delete old image"
         );
       }
     }
@@ -716,7 +712,7 @@ export const deletePost_DELETE = [
       throw new AppError(
         500,
         "INTERNAL_SERVER_ERROR",
-        "Current user not found",
+        "Current user not found"
       );
     }
 
@@ -726,7 +722,7 @@ export const deletePost_DELETE = [
       throw new AppError(
         403,
         "FORBIDDEN",
-        "You are not allowed to perform this action",
+        "You are not allowed to perform this action"
       );
     }
     // TODO: Delete image from cloudinary
@@ -745,7 +741,7 @@ export const deletePost_DELETE = [
         throw new AppError(
           500,
           "INTERNAL_SERVER_ERROR",
-          "Failure deleting image from post",
+          "Failure deleting image from post"
         );
       }
     }
@@ -870,7 +866,7 @@ export const getComments_GET = [
     const data = matchedData(req);
     const postId = parseInt(data.postId);
     let page = parseInt(data.page);
-    const LIMIT = 25;
+    const LIMIT = 15;
 
     const post = await db.post.findUnique({
       where: {
@@ -896,7 +892,7 @@ export const getComments_GET = [
       },
     });
     const totalPages = Math.ceil(
-      totalComments === 0 ? 1 : totalComments / LIMIT,
+      totalComments === 0 ? 1 : totalComments / LIMIT
     );
     if (page > totalPages) page = totalPages;
     const offset = (page - 1) * LIMIT;
@@ -950,13 +946,12 @@ export const getComments_GET = [
         userLikes: comment._count.likes,
       },
       userLikedComment: comment.likes.some(
-        (user) => user.userId === req.user?.id,
+        (user) => user.userId === req.user?.id
       ),
       userIsAuthor: comment.author.id === req.user?.id,
     }));
 
     res.json({
-      success: true,
       comments: finalComments,
       totalPages: totalPages,
       currentPage: page,
@@ -1064,7 +1059,7 @@ export const editComment_PUT = [
       const error = new AppError(
         403,
         "FORBIDDEN",
-        "You are forbidden from performing this action",
+        "You are forbidden from performing this action"
       );
       next(error);
       return;
@@ -1130,7 +1125,7 @@ export const deleteComment_DELETE = [
       const error = new AppError(
         403,
         "FORBIDDEN",
-        "You are not admin nor the author of this comment",
+        "You are not admin nor the author of this comment"
       );
       next(error);
       return;
