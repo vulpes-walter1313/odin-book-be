@@ -1,5 +1,5 @@
-import { describe, expect, test } from "@jest/globals";
-import { createIdBatchesForDeletion, generateRandomUsername } from "./utils";
+import { describe, expect, test } from "vitest";
+import { createIdBatchesForDeletion, generateRandomUsername } from "./utils.ts";
 import { faker } from "@faker-js/faker";
 
 describe("create batches of ids", () => {
