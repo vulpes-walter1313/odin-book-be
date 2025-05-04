@@ -1,11 +1,11 @@
-import { validateErrors } from "@/middleware/validation";
+import { validateErrors } from "../middleware/validation.ts";
 import asyncHandler from "express-async-handler";
 import { matchedData, param, query } from "express-validator";
 import passport from "passport";
 import { type Request, type Response, type NextFunction } from "express";
-import db from "@/db/db";
+import db from "../db/db.ts";
 import { Prisma } from "@prisma/client";
-import { AppError } from "@/lib/errors";
+import { AppError } from "../lib/errors.ts";
 
 // GET /profiles
 export const profiles_GET = [

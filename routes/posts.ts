@@ -1,5 +1,5 @@
 import express from "express";
-import * as postsController from "@/controllers/postsController";
+import * as postsController from "../controllers/postsController.ts";
 const router = express.Router();
 
 // All these routes are prefixed by /posts

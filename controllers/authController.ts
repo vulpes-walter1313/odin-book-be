@@ -1,11 +1,11 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { body, matchedData } from "express-validator";
-import db from "../db/db";
-import { validateErrors } from "@/middleware/validation";
+import db from "../db/db.ts";
+import { validateErrors } from "../middleware/validation.ts";
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { AppError } from "@/lib/errors";
+import { AppError } from "../lib/errors.ts";
 import passport from "passport";
 import status from "http-status";
 

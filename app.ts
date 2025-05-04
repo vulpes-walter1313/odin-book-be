@@ -4,25 +4,25 @@ import express, {
   type NextFunction,
 } from "express";
 import { createServer } from "http";
-import HttpError from "./lib/httpError";
+import HttpError from "./lib/httpError.ts";
 import passport from "passport";
 import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import authRouter from "./routes/auth";
-import profilesRouter from "./routes/profiles";
-import postRouter from "./routes/posts";
-import accountRouter from "./routes/account";
-import adminRouter from "./routes/admin";
+import authRouter from "./routes/auth.ts";
+import profilesRouter from "./routes/profiles.ts";
+import postRouter from "./routes/posts.ts";
+import accountRouter from "./routes/account.ts";
+import adminRouter from "./routes/admin.ts";
 
 import morgan from "morgan";
-import db from "@/db/db";
+import db from "./db/db.ts";
 import cors from "cors";
-import { AppError } from "./lib/errors";
+import { AppError } from "./lib/errors.ts";
 import multer from "multer";
 import { status } from "http-status";
 import cron from "node-cron";
-import { clearOldUserBans } from "./lib/cronJobs";
-import { generateRandomUsername } from "./lib/utils";
+import { clearOldUserBans } from "./lib/cronJobs.ts";
+import { generateRandomUsername } from "./lib/utils.ts";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3000");

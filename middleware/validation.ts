@@ -1,4 +1,4 @@
-import { AppError } from "@/lib/errors";
+import { AppError } from "../lib/errors.ts";
 import { type Request, type Response, type NextFunction } from "express";
 import { validationResult } from "express-validator";
 

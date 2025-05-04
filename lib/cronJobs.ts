@@ -1,4 +1,4 @@
-import db from "@/db/db";
+import db from "../db/db.ts";
 
 export async function clearOldUserBans() {
   const now = new Date();

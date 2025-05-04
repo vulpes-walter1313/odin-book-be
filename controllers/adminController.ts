@@ -1,13 +1,13 @@
 import passport from "passport";
 import { type Request, type Response, type NextFunction } from "express";
 import asyncHandler from "express-async-handler";
-import { AppError } from "@/lib/errors";
+import { AppError } from "../lib/errors.ts";
 import { status } from "http-status";
-import db from "@/db/db";
+import db from "../db/db.ts";
 import { body, matchedData, param } from "express-validator";
-import { validateErrors } from "@/middleware/validation";
-import { createIdBatchesForDeletion } from "@/lib/utils";
-import cloudinary from "@/lib/cloudinaryUploader";
+import { validateErrors } from "../middleware/validation.ts";
+import { createIdBatchesForDeletion } from "../lib/utils.ts";
+import cloudinary from "../lib/cloudinaryUploader.ts";
 
 // DELETE /admin/users/:username
 export const deleteUser_DELETE = [
