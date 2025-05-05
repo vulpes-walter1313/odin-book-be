@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch ./app.ts",
-    "build": "rm -rv dist/ && tsc",
-    "start": "node ./dist/app.js",
+    "build": "tsc",
+    "clean": "rm -rv dist/",
+    "start": "prisma migrate deploy && node ./dist/app.js",
     "prettier": "prettier . --write",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
