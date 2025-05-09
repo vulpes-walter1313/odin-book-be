@@ -91,7 +91,7 @@ export const signup_POST = [
       process.env.JWT_SECRET!,
       {
         algorithm: "HS256",
-        expiresIn: "1d",
+        expiresIn: "5m",
       },
       (err, accessToken) => {
         if (err) {
@@ -204,7 +204,7 @@ export const signin_POST = [
       process.env.JWT_SECRET!,
       {
         algorithm: "HS256",
-        expiresIn: "1d",
+        expiresIn: "5m",
       },
       (err, accessToken) => {
         if (err) {
@@ -369,7 +369,7 @@ export const googleLoginCallback_GET = [
       process.env.JWT_SECRET!,
       {
         algorithm: "HS256",
-        expiresIn: "1d",
+        expiresIn: "5m",
       },
       (err, accessToken) => {
         if (err) {
