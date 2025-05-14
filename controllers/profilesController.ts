@@ -54,6 +54,16 @@ export const profiles_GET = [
           },
         },
       },
+      orderBy: [
+        {
+          followers: {
+            _count: "desc",
+          },
+        },
+        {
+          name: "asc",
+        },
+      ],
     });
     // TODO: check if logged in user follows them or not
     const finalUsers = allUsers.map((user) => {
