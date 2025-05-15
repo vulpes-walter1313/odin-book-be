@@ -124,6 +124,7 @@ export const editAccountInfo_PUT = [
   }),
 ];
 
+// PUT /account/password
 export const updatePassword_PUT = [
   passport.authenticate("jwt", { session: false }),
   body("oldPassword").notEmpty(),
@@ -202,6 +203,7 @@ export const updatePassword_PUT = [
   }),
 ];
 
+// PUT /account/username
 export const updateUsername_PUT = [
   passport.authenticate("jwt", { session: false }),
   body("newUsername")
@@ -253,6 +255,7 @@ export const updateUsername_PUT = [
   }),
 ];
 
+// DELETE /account/user
 export const deleteAccount_DELETE = [
   passport.authenticate("jwt", { session: false }),
   body("confirm")
