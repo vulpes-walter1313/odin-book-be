@@ -19,7 +19,12 @@ const upload = multer({
     fileSize: MAX_FILESIZE, // max size for all individual files
   },
   fileFilter: (req, file, callback) => {
-    const acceptedMimeTypes = ["image/jpeg", "image/png"];
+    const acceptedMimeTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/heic",
+    ];
 
     console.log(
       "multer config -> mimetype uploaded to verify: ",
