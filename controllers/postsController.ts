@@ -97,6 +97,7 @@ export const getPosts_GET = [
           id: true,
           caption: true,
           imageUrl: true,
+          imageId: true,
           createdAt: true,
           updatedAt: true,
           imageWidth: true,
@@ -132,7 +133,20 @@ export const getPosts_GET = [
             comments: post._count.comments,
           },
           caption: post.caption,
-          imageUrl: post.imageUrl,
+          imageUrl: post.imageId
+            ? cloudinary.url(post.imageId, {
+                transformation: [
+                  {
+                    width: 1000,
+                    crop: "scale",
+                  },
+                  {
+                    fetch_format: "jpg",
+                    quality: "auto",
+                  },
+                ],
+              })
+            : post.imageUrl,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
           imageWidth: post.imageWidth,
@@ -197,6 +211,7 @@ export const getPosts_GET = [
         select: {
           id: true,
           caption: true,
+          imageId: true,
           imageUrl: true,
           createdAt: true,
           updatedAt: true,
@@ -239,7 +254,20 @@ export const getPosts_GET = [
             profileImg: post.author.profileImg,
           },
           caption: post.caption,
-          imageUrl: post.imageUrl,
+          imageUrl: post.imageId
+            ? cloudinary.url(post.imageId, {
+                transformation: [
+                  {
+                    width: 1000,
+                    crop: "scale",
+                  },
+                  {
+                    quality: "auto",
+                    fetch_format: "jpg",
+                  },
+                ],
+              })
+            : post.imageUrl,
           imageWidth: post.imageWidth,
           imageHeight: post.imageHeight,
           createdAt: post.createdAt,
@@ -282,6 +310,7 @@ export const getPosts_GET = [
         select: {
           id: true,
           caption: true,
+          imageId: true,
           imageUrl: true,
           createdAt: true,
           updatedAt: true,
@@ -314,7 +343,20 @@ export const getPosts_GET = [
         return {
           id: post.id,
           caption: post.caption,
-          imageUrl: post.imageUrl,
+          imageUrl: post.imageId
+            ? cloudinary.url(post.imageId, {
+                transformation: [
+                  {
+                    width: 1000,
+                    crop: "scale",
+                  },
+                  {
+                    quality: "auto",
+                    fetch_format: "jpg",
+                  },
+                ],
+              })
+            : post.imageUrl,
           imageWidth: post.imageWidth,
           imageHeight: post.imageHeight,
           createdAt: post.createdAt,
@@ -401,6 +443,7 @@ export const getPosts_GET = [
         select: {
           id: true,
           caption: true,
+          imageId: true,
           imageUrl: true,
           imageWidth: true,
           imageHeight: true,
@@ -432,7 +475,20 @@ export const getPosts_GET = [
         return {
           id: post.id,
           caption: post.caption,
-          imageUrl: post.imageUrl,
+          imageUrl: post.imageId
+            ? cloudinary.url(post.imageId, {
+                transformation: [
+                  {
+                    width: 1000,
+                    crop: "scale",
+                  },
+                  {
+                    quality: "auto",
+                    fetch_format: "jpg",
+                  },
+                ],
+              })
+            : post.imageUrl,
           imageWidth: post.imageWidth,
           imageHeight: post.imageHeight,
           createdAt: post.createdAt,
@@ -548,6 +604,7 @@ export const getPost_GET = [
       select: {
         id: true,
         caption: true,
+        imageId: true,
         imageUrl: true,
         imageWidth: true,
         imageHeight: true,
@@ -586,7 +643,20 @@ export const getPost_GET = [
       post: {
         id: post.id,
         caption: post.caption,
-        imageUrl: post.imageUrl,
+        imageUrl: post.imageId
+          ? cloudinary.url(post.imageId, {
+              transformation: [
+                {
+                  width: 1000,
+                  crop: "scale",
+                },
+                {
+                  quality: "auto",
+                  fetch_format: "jpg",
+                },
+              ],
+            })
+          : post.imageUrl,
         imageWidth: post.imageWidth,
         imageHeight: post.imageHeight,
         createdAt: post.createdAt,
