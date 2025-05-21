@@ -27,6 +27,7 @@ export const account_GET = [
         username: true,
         bio: true,
         profileImg: true,
+        profileImgId: true,
         account: {
           select: {
             provider: true,
@@ -47,7 +48,20 @@ export const account_GET = [
         name: user.name,
         username: user.username,
         bio: user.bio,
-        profileImg: user.profileImg,
+        profileImg: user.profileImgId
+          ? cloudinary.url(user.profileImgId, {
+              transformation: [
+                {
+                  width: 100,
+                  crop: "scale",
+                },
+                {
+                  quality: "auto",
+                  fetch_format: "jpg",
+                },
+              ],
+            })
+          : user.profileImg,
       },
       hasCredentialsAccount: hasCredentialsAccount,
     });

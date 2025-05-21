@@ -108,6 +108,7 @@ export const getPosts_GET = [
               name: true,
               username: true,
               profileImg: true,
+              profileImgId: true,
             },
           },
           _count: {
@@ -155,7 +156,20 @@ export const getPosts_GET = [
             id: post.author.id,
             name: post.author.name,
             username: post.author.username,
-            profileImg: post.author.profileImg,
+            profileImg: post.author.profileImgId
+              ? cloudinary.url(post.author.profileImgId, {
+                  transformation: [
+                    {
+                      width: 100,
+                      crop: "scale",
+                    },
+                    {
+                      quality: "auto",
+                      fetch_format: "jpg",
+                    },
+                  ],
+                })
+              : post.author.profileImg,
           },
           likedByUser: post.likes.some((user) => user.userId === req.user?.id),
         };
@@ -223,6 +237,7 @@ export const getPosts_GET = [
               name: true,
               username: true,
               profileImg: true,
+              profileImgId: true,
             },
           },
           _count: {
@@ -251,7 +266,20 @@ export const getPosts_GET = [
             id: post.author.id,
             name: post.author.name,
             username: post.author.username,
-            profileImg: post.author.profileImg,
+            profileImg: post.author.profileImgId
+              ? cloudinary.url(post.author.profileImgId, {
+                  transformation: [
+                    {
+                      width: 100,
+                      crop: "auto",
+                    },
+                    {
+                      quality: "auto",
+                      fetch_format: "jpg",
+                    },
+                  ],
+                })
+              : post.author.profileImg,
           },
           caption: post.caption,
           imageUrl: post.imageId
@@ -322,6 +350,7 @@ export const getPosts_GET = [
               name: true,
               username: true,
               profileImg: true,
+              profileImgId: true,
             },
           },
           _count: {
@@ -365,7 +394,20 @@ export const getPosts_GET = [
             id: post.author.id,
             username: post.author.username,
             name: post.author.name,
-            profileImg: post.author.profileImg,
+            profileImg: post.author.profileImgId
+              ? cloudinary.url(post.author.profileImgId, {
+                  transformation: [
+                    {
+                      width: 100,
+                      crop: "scale",
+                    },
+                    {
+                      quality: "auto",
+                      fetch_format: "jpg",
+                    },
+                  ],
+                })
+              : post.author.profileImg,
           },
           _count: {
             userLikes: post._count.likes,
@@ -455,6 +497,7 @@ export const getPosts_GET = [
               name: true,
               username: true,
               profileImg: true,
+              profileImgId: true,
             },
           },
           _count: {
@@ -497,7 +540,20 @@ export const getPosts_GET = [
             id: post.author.id,
             username: post.author.username,
             name: post.author.name,
-            profileImg: post.author.profileImg,
+            profileImg: post.author.profileImgId
+              ? cloudinary.url(post.author.profileImgId, {
+                  transformation: [
+                    {
+                      width: 100,
+                      crop: "scale",
+                    },
+                    {
+                      quality: "auto",
+                      fetch_format: "jpg",
+                    },
+                  ],
+                })
+              : post.author.profileImg,
           },
           _count: {
             userLikes: post._count.likes,
@@ -616,6 +672,7 @@ export const getPost_GET = [
             name: true,
             username: true,
             profileImg: true,
+            profileImgId: true,
           },
         },
         _count: {
@@ -665,7 +722,20 @@ export const getPost_GET = [
           id: post.author.id,
           name: post.author.name,
           username: post.author.username,
-          profileImg: post.author.profileImg,
+          profileImg: post.author.profileImgId
+            ? cloudinary.url(post.author.profileImgId, {
+                transformation: [
+                  {
+                    width: 100,
+                    crop: "scale",
+                  },
+                  {
+                    quality: "auto",
+                    fetch_format: "jpg",
+                  },
+                ],
+              })
+            : post.author.profileImg,
         },
         _count: {
           userLikes: post._count.likes,
@@ -983,6 +1053,7 @@ export const getComments_GET = [
             id: true,
             name: true,
             profileImg: true,
+            profileImgId: true,
           },
         },
         message: true,
@@ -1010,7 +1081,20 @@ export const getComments_GET = [
       author: {
         id: comment.author.id,
         name: comment.author.name,
-        profileImg: comment.author.profileImg,
+        profileImg: comment.author.profileImgId
+          ? cloudinary.url(comment.author.profileImgId, {
+              transformation: [
+                {
+                  width: 100,
+                  crop: "scale",
+                },
+                {
+                  quality: "auto",
+                  fetch_format: "jpg",
+                },
+              ],
+            })
+          : comment.author.profileImg,
       },
       _count: {
         userLikes: comment._count.likes,

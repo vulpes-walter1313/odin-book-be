@@ -6,6 +6,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import db from "../db/db.ts";
 import { Prisma } from "@prisma/client";
 import { AppError } from "../lib/errors.ts";
+import cloudinary from "../lib/cloudinaryUploader.ts";
 
 // GET /profiles
 export const profiles_GET = [
@@ -43,6 +44,7 @@ export const profiles_GET = [
         username: true,
         bio: true,
         profileImg: true,
+        profileImgId: true,
         _count: {
           select: {
             followers: true,
@@ -72,7 +74,20 @@ export const profiles_GET = [
         name: user.name,
         username: user.username,
         bio: user.bio,
-        profileImg: user.profileImg,
+        profileImg: user.profileImgId
+          ? cloudinary.url(user.profileImgId, {
+              transformation: [
+                {
+                  width: 100,
+                  crop: "scale",
+                },
+                {
+                  quality: "auto",
+                  fetch_format: "jpg",
+                },
+              ],
+            })
+          : user.profileImg,
         _count: {
           followedBy: user._count.followers,
         },
@@ -110,6 +125,7 @@ export const profile_GET = [
         bannedUntil: true,
         bio: true,
         profileImg: true,
+        profileImgId: true,
         _count: {
           select: {
             posts: true,
@@ -134,7 +150,20 @@ export const profile_GET = [
       username: userProfile.username,
       bannedUntil: userProfile.bannedUntil,
       bio: userProfile.bio,
-      profileImg: userProfile.profileImg,
+      profileImg: userProfile.profileImgId
+        ? cloudinary.url(userProfile.profileImgId, {
+            transformation: [
+              {
+                width: 100,
+                crop: "scale",
+              },
+              {
+                quality: "auto",
+                fetch_format: "jpg",
+              },
+            ],
+          })
+        : userProfile.profileImg,
       _count: {
         posts: userProfile._count.posts,
         followedBy: userProfile._count.followers,
@@ -306,6 +335,7 @@ export const profileFollowing_GET = [
         username: true,
         bio: true,
         profileImg: true,
+        profileImgId: true,
         _count: {
           select: {
             followers: true,
@@ -338,7 +368,20 @@ export const profileFollowing_GET = [
       name: user.name,
       username: user.username,
       bio: user.bio,
-      profileImg: user.profileImg,
+      profileImg: user.profileImgId
+        ? cloudinary.url(user.profileImgId, {
+            transformation: [
+              {
+                width: 100,
+                crop: "scale",
+              },
+              {
+                quality: "auto",
+                fetch_format: "jpg",
+              },
+            ],
+          })
+        : user.profileImg,
       _count: {
         followedBy: user._count.followers,
         following: user._count.following,
@@ -415,6 +458,7 @@ export const profileFollowers_GET = [
         username: true,
         bio: true,
         profileImg: true,
+        profileImgId: true,
         _count: {
           select: {
             followers: true,
@@ -447,7 +491,20 @@ export const profileFollowers_GET = [
       name: user.name,
       username: user.username,
       bio: user.bio,
-      profileImg: user.profileImg,
+      profileImg: user.profileImgId
+        ? cloudinary.url(user.profileImgId, {
+            transformation: [
+              {
+                width: 100,
+                crop: "scale",
+              },
+              {
+                quality: "auto",
+                fetch_format: "jpg",
+              },
+            ],
+          })
+        : user.profileImg,
       _count: {
         followedBy: user._count.followers,
         following: user._count.following,
