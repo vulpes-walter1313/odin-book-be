@@ -221,12 +221,15 @@ export const updatePassword_PUT = [
 export const updateUsername_PUT = [
   passport.authenticate("jwt", { session: false }),
   body("newUsername")
+    .trim()
     .isLength({ min: 3, max: 32 })
     .custom((val) => {
       // checks if username doesn't have special characters
       // and does not start with an @ symbol
-      return /^[a-zA-Z]\w+[^-_$%#@!&*()]$/.test(val);
-    }),
+      return /^[a-zA-Z]\w+[^-_$%#@!\s&*()]$/.test(val);
+    })
+    .withMessage("Username should not have spaces or special characters"),
+  ,
   validateErrors,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const data = matchedData(req);

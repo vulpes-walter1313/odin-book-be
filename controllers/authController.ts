@@ -15,6 +15,7 @@ export const signup_POST = [
     .isLength({ min: 3, max: 48 })
     .withMessage("Name must be between 3 and 48 characters."),
   body("username")
+    .trim()
     .isLength({ min: 3, max: 32 })
     .withMessage("username must be between 3 and 32 characters")
     .custom(async (value) => {
@@ -26,7 +27,13 @@ export const signup_POST = [
       if (user) {
         throw new Error("Username taken");
       }
-    }),
+    })
+    .custom((val) => {
+      // checks if username doesn't have special characters
+      // and does not start with an @ symbol
+      return /^[a-zA-Z]\w+[^-_$%#@!\s&*()]$/.test(val);
+    })
+    .withMessage("Username should not have spaces or special characters"),
   body("email")
     .isEmail()
     .custom(async (value) => {
