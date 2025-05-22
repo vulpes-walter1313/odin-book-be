@@ -229,7 +229,6 @@ export const updateUsername_PUT = [
       return /^[a-zA-Z]\w+[^-_$%#@!\s&*()]$/.test(val);
     })
     .withMessage("Username should not have spaces or special characters"),
-  ,
   validateErrors,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const data = matchedData(req);
